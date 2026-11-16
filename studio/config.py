@@ -234,5 +234,5 @@ def _read_google_client() -> tuple:
 
 
 # ---------------------------------------------------------------- video
-MAX_SOURCE_HEIGHT = 1080
+MAX_SOURCE_HEIGHT = int(env("PEAKCUT_MAX_SOURCE_HEIGHT", "2160"))
 OUT_W, OUT_H, OUT_FPS = 1080, 1920, 30

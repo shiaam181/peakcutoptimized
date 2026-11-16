@@ -1374,9 +1374,11 @@ function drawAdd(variant) {
       </div></div>
       <div class="ob"><div class="ot">Caption style</div>${choice("o_style", Object.entries(S.status.styles).map(([k, v]) => ({v:k, label:v, prev:capPrev(k)})), c?.style ?? "bounce")}</div>
       <div class="ob"><div class="ot">Layout</div>${choice("o_layout", Object.entries(S.status.layouts).map(([k, v]) => ({v:k, label:LAYOUT_SHORT[k] || v, title:v, prev:`<span class="lay-prev ${esc(k)}"><span class="ph"><i></i></span></span>`})), c?.layout ?? "blur")}</div>
-      <div class="ob"><div class="ot">Video quality</div><input type="hidden" id="o_quality" value="720"><div class="seg" role="group" aria-label="Video quality">
-        <button type="button" data-seg="o_quality" data-v="720" aria-pressed="true">720p<small>Fast</small></button>
-        <button type="button" data-seg="o_quality" data-v="1080" aria-pressed="false">1080p<small>Sharper, about 2x slower</small></button></div></div>
+      <div class="ob"><div class="ot">Video quality</div><input type="hidden" id="o_quality" value="1080"><div class="seg" role="group" aria-label="Video quality">
+        <button type="button" data-seg="o_quality" data-v="720" aria-pressed="false">720p<small>Fast</small></button>
+        <button type="button" data-seg="o_quality" data-v="1080" aria-pressed="true">1080p<small>Full HD</small></button>
+        <button type="button" data-seg="o_quality" data-v="1440" aria-pressed="false">2K<small>1440p</small></button>
+        <button type="button" data-seg="o_quality" data-v="2160" aria-pressed="false">4K<small>Ultra HD</small></button></div></div>
       <div class="ob"><div class="ot">Part of the video</div><div class="range">
         <label>From<input id="o_from" type="number" min="0" placeholder="start" aria-label="From minute">min</label>${ic("arrowr")}
         <label>To<input id="o_to" type="number" min="0" placeholder="end" aria-label="Up to minute">min</label></div></div>
@@ -2049,7 +2051,11 @@ async function drawSettings() {
           <button class="btn danger" data-act="delaccount">${ic("trash")}Delete my account</button></section>`;
     }
     if (tab === "storage") {
-      const s = S.stor = await api("/api/storage");
+      const [s, drv] = await Promise.all([
+        api("/api/storage"),
+        api("/api/drive").catch(() => ({enabled: false, folder_id: "", has_key: false}))
+      ]);
+      S.stor = s;
       const usedPct = s.total_gb ? Math.min(100, Math.max(1, 100 * (s.total_gb - s.free_gb) / s.total_gb)) : 0;
       const gb = n => `${Number(n).toLocaleString(undefined, {maximumFractionDigits: 1})} GB`;
       body.innerHTML = `<section class="set-sec"><h2>Storage</h2><p class="help">Everything PeakCut keeps is in one folder: your videos, clips, recordings, creators and settings. You can open it, back it up, or move it to a drive with more room.</p>
@@ -2063,7 +2069,27 @@ async function drawSettings() {
                 <label class="ck"><input type="checkbox" id="stor_move" checked>Move everything that is in the current folder there too</label>
                 <p class="sub">The change happens the next time PeakCut starts, so nothing is moved while a video is being made.</p>
                 <div class="row"><button class="btn primary" data-act="storsave">Use this folder</button><button class="btn ghost" data-act="storchange">Cancel</button></div></div>`
-            : `<div class="row" style="margin-top:16px"><button class="btn" data-act="storchange">Change folder</button></div>`}</section>`;
+            : `<div class="row" style="margin-top:16px"><button class="btn" data-act="storchange">Change folder</button></div>`}</section>
+        <section class="set-sec" style="margin-top:28px">
+          <h2>Google Drive / Auto-export folder</h2>
+          <p class="help">Automatically save every finished clip directly into a folder (such as your Google Drive synced folder) as soon as it is rendered.</p>
+          <div style="display:grid;gap:14px;max-width:540px">
+            <label class="ck"><input type="checkbox" id="drv_enabled" ${drv.enabled ? "checked" : ""}>Automatically export newly created clips</label>
+            <label class="f">Export folder path<input id="drv_path" value="${esc(drv.folder_path || "")}" placeholder="For example G:\\My Drive\\clippedautoupload" spellcheck="false"><span class="hint">Every clip is saved directly into this folder without creating extra subfolders.</span></label>
+            <div class="row" style="margin-top:6px;gap:8px">
+              <button class="btn primary" data-act="drivesave">Save settings</button>
+              <button class="btn" data-act="drivetest">Check folder</button>
+              <button class="btn ghost" data-act="drivesyncall">Export existing clips now</button>
+            </div>
+            <details style="margin-top:10px;font-size:13px;color:var(--ink-mid)">
+              <summary style="cursor:pointer;user-select:none">Advanced: Google Cloud Service Account (for Workspace Shared Drives)</summary>
+              <div style="display:grid;gap:12px;margin-top:12px">
+                <label class="f">Drive folder link or ID<input id="drv_folder" value="${esc(drv.folder_id || "")}" placeholder="https://drive.google.com/drive/folders/... or Folder ID" spellcheck="false"></label>
+                <label class="f">Service Account Key (JSON)<textarea id="drv_key" rows="2" placeholder="${drv.has_key ? "Key is saved" + (drv.key_email ? " (" + esc(drv.key_email) + ")" : "") : "Paste JSON key here..."}" style="font-family:monospace;font-size:12px"></textarea></label>
+              </div>
+            </details>
+          </div>
+        </section>`;
     }
     if (tab === "apps") {
       const conn = S.accounts || [];
@@ -2410,6 +2436,43 @@ document.addEventListener("click", async e => {
       S.storOpen = false; toast("Saved. Close PeakCut and start it again to switch to the new folder.", "ok"); return drawSettings();
     }
     if (a === "storcancel") { await send("/api/storage", {cancel: true}, "PUT"); toast("Kept the current folder", "ok"); return drawSettings(); }
+    if (a === "drivesave") {
+      b.disabled = true;
+      try {
+        await send("/api/drive", {
+          folder_path: $("#drv_path").value,
+          folder_id: $("#drv_folder")?.value || "",
+          key_json: $("#drv_key")?.value || "",
+          enabled: $("#drv_enabled").checked
+        }, "PUT");
+        toast("Settings saved", "ok");
+        return drawSettings();
+      } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; }
+      return;
+    }
+    if (a === "drivetest") {
+      b.disabled = true;
+      try {
+        await send("/api/drive", {
+          folder_path: $("#drv_path").value,
+          folder_id: $("#drv_folder")?.value || "",
+          key_json: $("#drv_key")?.value || "",
+          enabled: $("#drv_enabled").checked
+        }, "PUT");
+        const t = await send("/api/drive/test", {folder_path: $("#drv_path").value});
+        toast(`Folder ready: "${t.name}"! Clips will be saved here.`, "ok");
+        return drawSettings();
+      } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; }
+      return;
+    }
+    if (a === "drivesyncall") {
+      b.disabled = true;
+      try {
+        const res = await send("/api/drive/export-all", {}, "POST");
+        toast(`Exported ${res.count} clip${res.count === 1 ? "" : "s"} to your folder!`, "ok");
+      } catch (err) { toast(err.message, "bad"); } finally { b.disabled = false; }
+      return;
+    }
     if (a === "appsetup") { S.setupOpen = d.p && S.setupOpen !== d.p ? d.p : ""; return drawSettings(); }
     if (a === "copytext") { await navigator.clipboard.writeText(d.t); return toast("Copied", "ok"); }
     if (a === "appsave") {

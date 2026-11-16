@@ -107,11 +107,11 @@ _by_user: dict = {}                       # user -> {job id: job}: listing one p
 _lock = threading.RLock()
 on_clip_ready: list = []   # callbacks (job, clip), run once when a clip first finishes
 
-DEFAULTS = {"max_clips": 6, "min_len": 15, "max_len": 60, "style": "bounce", "layout": "blur", "quality": 720,
+DEFAULTS = {"max_clips": 6, "min_len": 15, "max_len": 60, "style": "bounce", "layout": "blur", "quality": 1080,
             "range_start": None, "range_end": None}
 
 
-LIMITS = {"max_clips": (1, 20), "min_len": (5, 120), "max_len": (10, 180), "quality": (360, 1080)}
+LIMITS = {"max_clips": (1, 20), "min_len": (5, 120), "max_len": (10, 180), "quality": (360, 2160)}
 
 
 def clean_options(options) -> dict:
@@ -367,7 +367,15 @@ def render_one(job, clip, words):
     save(job)
     try:
         off = clip.get("src_offset", 0.0)
+        if not clip.get("src") and (not job.get("source_path") or not Path(job.get("source_path", "")).is_file()):
+            if job.get("source", {}).get("type") == "url":
+                p = media.download(job["source"]["url"], d, int(job["options"].get("quality", 720)))
+                info = media.probe(p)
+                job.update(source_path=str(p), width=info["width"], height=info["height"])
+                save(job)
         src = Path(clip["src"]) if clip.get("src") else Path(job["source_path"])
+        job.setdefault("width", 1280)
+        job.setdefault("height", 720)
         if not clip.get("src"):
             clip["end"] = min(clip["end"], job["duration"])
         local = dict(clip, start=clip["start"] - off, end=clip["end"] - off, hook=roman.to_roman(clip.get("hook") or ""))
@@ -449,7 +457,7 @@ def _english_part(job, clip):
     return [w for w in en if clip["start"] - 0.5 <= w["s"] <= clip["end"] + 0.5]
 
 
-LONG_VIDEO = 40 * 60   # above this, fetch only the pieces that become clips
+LONG_VIDEO = int(config.env("PEAKCUT_LONG_VIDEO", str(4 * 3600)))   # above this, fetch only the pieces that become clips
 PAD = 8                # seconds kept either side of a fetched piece, so clips can be re-trimmed
 
 

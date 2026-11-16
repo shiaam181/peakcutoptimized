@@ -72,6 +72,8 @@ def _startup():
     jobs.start()
     live.start()
     posting.start()
+    from . import drive
+    drive.start()
     from . import updates
     updates.start()                  # looks for a newer PeakCut every minute, in the background
 
@@ -1427,6 +1429,50 @@ def storage_put(request: Request, body: dict = Body(...)):
     except ValueError as e:
         raise HTTPException(400, str(e))
     return storage.info(_on_this_computer(request))
+
+
+@app.get("/api/drive")
+def drive_get(request: Request):
+    from . import drive
+    _admin(request)
+    return drive.public()
+
+
+@app.put("/api/drive")
+def drive_put(request: Request, body: dict = Body(...)):
+    from . import drive
+    _admin(request)
+    try:
+        return drive.save(
+            folder_path=body.get("folder_path", ""),
+            folder_id=body.get("folder_id", ""),
+            key_file=body.get("key_file", ""),
+            key_json=body.get("key_json", ""),
+            enabled=body.get("enabled", True),
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/drive/test")
+def drive_test(request: Request, body: dict = Body(None)):
+    from . import drive
+    _admin(request)
+    try:
+        path = (body or {}).get("folder_path", "") if isinstance(body, dict) else ""
+        return drive.test_connection(path)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"Google Drive error: {e}")
+
+
+@app.post("/api/drive/export-all")
+def drive_export_all(request: Request):
+    from . import drive
+    _admin(request)
+    n = drive.export_all_existing()
+    return {"ok": True, "count": n}
 
 
 @app.get("/api/apps")
