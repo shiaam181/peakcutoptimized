@@ -1207,6 +1207,9 @@ def edit_creator(cid: str, body: dict = Body(...)):
 @app.post("/api/creators/{cid}/check_uploads")
 def trigger_check_uploads(cid: str, body: dict = Body(default={})):
     _need_verified()
+    c = creators.get(cid)
+    if not c:
+        raise HTTPException(404, "No such creator")
     from . import watcher
     force = bool((body or {}).get("force"))
     try:

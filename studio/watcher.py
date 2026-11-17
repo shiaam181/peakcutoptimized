@@ -130,7 +130,12 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
         try:
             job = jobs.create(
                 source={"type": "url", "url": v["url"], "name": v["title"]},
-                options={"max_clips": clip_count, "quality": 1080},
+                options={
+                    "max_clips": clip_count,
+                    "quality": 1080,
+                    "min_len": int(c.get("min_len") or 30),
+                    "max_len": int(c.get("max_len") or 50),
+                },
                 creator=c["id"],
             )
             creators.mark_seen_upload(c["id"], v["id"])
@@ -178,3 +183,4 @@ def watch_uploads_loop():
 def start():
     """Start the upload watcher background thread."""
     threading.Thread(target=watch_uploads_loop, daemon=True, name="upload-watcher").start()
+

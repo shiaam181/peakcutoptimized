@@ -1862,7 +1862,7 @@ function drawCreatorForm() {
         <label class="sw span"><input type="checkbox" data-k="auto_watch" ${c.auto_watch ? "checked" : ""}><span>Record automatically when they go live<small>Checks straight away, then every two minutes.</small></span></label>
         <label class="sw span"><input type="checkbox" data-k="auto_clip_uploads" ${c.auto_clip_uploads ? "checked" : ""}><span>Auto-clip new long videos<small>Checks every 3 minutes. When they upload a long video, automatically makes clips.</small></span></label>
         <label class="f">Clips per new upload<input data-k="auto_clip_count" type="number" min="1" max="30" value="${c.auto_clip_count || 10}"></label>
-        <label class="f">Minimum video duration (seconds)<input data-k="min_upload_duration" type="number" min="30" max="7200" step="30" value="${c.min_upload_duration || 300}"><small class="sub">Videos shorter than this (like Shorts) are skipped. 300 = 5 minutes.</small></label>
+        <label class="f">Only clip channel videos longer than (seconds)<input data-k="min_upload_duration" type="number" min="30" max="7200" step="30" value="${c.min_upload_duration || 300}"><small class="sub">Filter on creator's channel to skip their YouTube Shorts. 300 = 5 minutes.</small></label>
         <div class="span" style="margin-top:6px">
           <button type="button" class="btn" style="padding:6px 14px;font-size:13px" onclick="checkUploadsNow('${esc(c.id)}')">${ic("refresh")} Check for new uploads now</button>
         </div>
@@ -1878,11 +1878,11 @@ function drawCreatorForm() {
         <label class="f">Minimum gap between live clips (minutes)<input data-k="min_gap_min" type="number" min="0" max="60" value="${c.min_gap_min}"></label>
         <label class="f span">Always clip the last 30 seconds when someone says<input data-k="trigger_words" value="${esc(c.trigger_words)}" placeholder="clip that, clip it"><small class="sub" style="font-weight:400">Separate phrases with commas. Matched on the transcript, so it needs no AI call.</small></label>
       </div></div>
-    <div class="card"><h2>Clips</h2><p class="help">How this creator's clips look.</p>
+    <div class="card"><h2>Clips</h2><p class="help">How this creator's clips look and length (around 50s for Reels and Shorts).</p>
       <div class="fields"><label class="f">Caption style<select data-k="style">${opts(S.status.styles, c.style)}</select></label>
         <label class="f">Layout<select data-k="layout">${opts(S.status.layouts, c.layout)}</select></label>
-        <label class="f">Shortest clip (seconds)<input data-k="min_len" type="number" value="${c.min_len}"></label>
-        <label class="f">Longest clip (seconds)<input data-k="max_len" type="number" value="${c.max_len}"></label>
+        <label class="f">Shortest clip (seconds)<input data-k="min_len" type="number" min="5" max="120" value="${c.min_len || 30}"><small class="sub">e.g. 30s</small></label>
+        <label class="f">Longest clip (seconds)<input data-k="max_len" type="number" min="10" max="180" value="${c.max_len || 50}"><small class="sub">e.g. 50s (fits 60s Reels & Shorts)</small></label>
         <label class="f">Clips per video<input data-k="max_clips" type="number" value="${c.max_clips}"></label>
         <label class="f">Minutes of live stream to keep<input data-k="buffer_min" type="number" value="${c.buffer_min}"></label></div></div>
     <div class="card"><h2>Posting</h2><p class="help">${A.length ? "Choose the accounts this creator's clips go to. One account can be shared by several creators." : "No accounts are connected yet. Connect one in Settings, then come back."}</p>
