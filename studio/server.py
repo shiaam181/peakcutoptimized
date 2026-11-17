@@ -74,6 +74,8 @@ def _startup():
     posting.start()
     from . import drive
     drive.start()
+    from . import watcher
+    watcher.start()
     from . import updates
     updates.start()                  # looks for a newer PeakCut every minute, in the background
 
@@ -1196,7 +1198,22 @@ def edit_creator(cid: str, body: dict = Body(...)):
         profiles.refresh(cid, force=True)
     if body.get("auto_watch") and c.get("auto_watch") and not s:
         live.check_now(cid)    # if they are live right now, recording starts within seconds
+    if body.get("auto_clip_uploads") and c.get("auto_clip_uploads"):
+        from . import watcher
+        watcher.check_creator_uploads(cid, force_clip_latest=False)
     return c
+
+
+@app.post("/api/creators/{cid}/check_uploads")
+def trigger_check_uploads(cid: str, body: dict = Body(default={})):
+    _need_verified()
+    from . import watcher
+    force = bool((body or {}).get("force"))
+    try:
+        queued = watcher.check_creator_uploads(cid, force_clip_latest=force)
+        return {"ok": True, "count": len(queued), "jobs": [jobs.public(j) for j in queued]}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @app.post("/api/creators/{cid}/live")

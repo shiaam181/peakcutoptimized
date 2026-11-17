@@ -1118,7 +1118,8 @@ function statusBadge(c) {
   const on = liveOn(c);
   if (on.length) { const [k, p] = on[0]; return `<span class="sbadge live"><i></i>Live on ${PLAT[k].name}${p.viewers ? " · " + fmtK(p.viewers) + " watching" : ""}</span>`; }
   if (!Object.keys(c.channels || {}).length) return `<span class="sbadge">No channel yet</span>`;
-  return `<span class="sbadge"><i></i>Offline${c.auto_watch ? " · records when live" : ""}</span>`;
+  const feats = [c.auto_watch ? "auto-records" : "", c.auto_clip_uploads ? "auto-clips uploads" : ""].filter(Boolean).join(" · ");
+  return `<span class="sbadge"><i></i>Offline${feats ? " · " + feats : ""}</span>`;
 }
 const cav = c => { const r = c.live_job || liveOn(c).length ? " ring" : "";
   return c.profile?.pic && c.profile.channel === c.channel ? `<img class="avatar${r}" src="${avatarUrl(c)}" alt="">` : `<span class="avatar${r}">${esc((c.name || "?")[0].toUpperCase())}</span>`; };
@@ -1834,12 +1835,38 @@ async function saveChannels(chs, main) {
   try { await send(`/api/creators/${creatorId()}`, body, "PUT"); await tick(); drawCreatorForm(); }
   catch (e) { toast(e.message, "bad"); }
 }
+async function checkUploadsNow(cid) {
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  toast("Checking for new uploads...", "info");
+  try {
+    const res = await send(`/api/creators/${encodeURIComponent(cid)}/check_uploads`, {force: false});
+    if (res.count > 0) {
+      toast(`Detected and enqueued ${res.count} new video(s)!`, "ok");
+      await tick();
+    } else {
+      toast("Channel is up to date. No new unclipped uploads found.", "ok");
+    }
+  } catch (e) {
+    toast("Upload check error: " + (e.message || e), "bad");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 function drawCreatorForm() {
   const c = creator(), box = $("#cform"); if (!c || !box) return;
   const A = S.accounts;
-  box.innerHTML = `<div class="card"><h2>Their stream</h2><p class="help">Where to record from, and whether to start by itself.</p>
+  box.innerHTML = `<div class="card"><h2>Their stream & uploads</h2><p class="help">Where to record from, and automation settings.</p>
       <div class="chans">${channelRows(c)}</div>
-      <div class="fields" style="margin-top:14px"><label class="sw span"><input type="checkbox" data-k="auto_watch" ${c.auto_watch ? "checked" : ""}><span>Record automatically when they go live<small>Checks straight away, then every two minutes.</small></span></label></div></div>
+      <div class="fields" style="margin-top:14px">
+        <label class="sw span"><input type="checkbox" data-k="auto_watch" ${c.auto_watch ? "checked" : ""}><span>Record automatically when they go live<small>Checks straight away, then every two minutes.</small></span></label>
+        <label class="sw span"><input type="checkbox" data-k="auto_clip_uploads" ${c.auto_clip_uploads ? "checked" : ""}><span>Auto-clip new long videos<small>Checks every 3 minutes. When they upload a long video, automatically makes clips.</small></span></label>
+        <label class="f">Clips per new upload<input data-k="auto_clip_count" type="number" min="1" max="30" value="${c.auto_clip_count || 10}"></label>
+        <label class="f">Minimum video duration (seconds)<input data-k="min_upload_duration" type="number" min="30" max="7200" step="30" value="${c.min_upload_duration || 300}"><small class="sub">Videos shorter than this (like Shorts) are skipped. 300 = 5 minutes.</small></label>
+        <div class="span" style="margin-top:6px">
+          <button type="button" class="btn" style="padding:6px 14px;font-size:13px" onclick="checkUploadsNow('${esc(c.id)}')">${ic("refresh")} Check for new uploads now</button>
+        </div>
+      </div></div>
     <div class="card"><h2>How the AI decides</h2><p class="help">Two separate AI checks. The words judge reads only what was said. The reaction judge sees only how loud the streamer got and how busy chat was, never the words.</p>
       <div class="fields">
         <label class="f">Check the live stream every<select data-k="ai_every_min">${opts({1:"1 minute", 2:"2 minutes", 3:"3 minutes", 5:"5 minutes", 10:"10 minutes"}, c.ai_every_min || 3)}</select><small class="sub" id="costhint" style="font-weight:400">${costHint(c.ai_every_min)}</small></label>

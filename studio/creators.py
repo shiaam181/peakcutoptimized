@@ -16,6 +16,7 @@ _lock = threading.RLock()
 
 DEFAULTS = {"name": "", "channel": "", "style": "bounce", "layout": "blur", "min_len": 15, "max_len": 60,
             "max_clips": 6, "min_score": 80, "auto_watch": False, "buffer_min": 20, "live_per_hour": 4, "ai_every_min": 3, "ai_only_on_spike": True, "auto_jump_pct": 60,
+            "auto_clip_uploads": False, "auto_clip_count": 10, "min_upload_duration": 300, "seen_upload_ids": [],
             "plan": "free", "decide_mode": "both", "must_clip_min": 0, "min_gap_min": 2,
             "trigger_words": "clip that, clip it",
             "autopost": False, "accounts": [], "post_min_score": 75, "post_gap_min": 45, "daily_cap": 6,
@@ -41,7 +42,8 @@ def _fix(c: dict) -> dict:
         c["channel"] = next((ch[k] for k in PLATFORMS if k in ch), "")
     return c
 NUMERIC = {"min_len": (5, 120), "max_len": (10, 180), "max_clips": (1, 20), "min_score": (0, 100), "buffer_min": (5, 120), "live_per_hour": (1, 60), "ai_every_min": (1, 30), "auto_jump_pct": (20, 300), "must_clip_min": (0, 240), "min_gap_min": (0, 60),
-           "post_min_score": (0, 100), "post_gap_min": (5, 1440), "daily_cap": (1, 50)}
+           "post_min_score": (0, 100), "post_gap_min": (5, 1440), "daily_cap": (1, 50),
+           "auto_clip_count": (1, 30), "min_upload_duration": (60, 7200)}
 
 
 def root(cid) -> Path:
@@ -59,8 +61,10 @@ def _clean(data: dict) -> dict:
         if k in NUMERIC:
             lo, hi = NUMERIC[k]
             v = max(lo, min(hi, int(float(v))))
-        elif k in ("auto_watch", "autopost", "ai_only_on_spike"):
+        elif k in ("auto_watch", "autopost", "ai_only_on_spike", "auto_clip_uploads"):
             v = bool(v)
+        elif k == "seen_upload_ids":
+            v = [str(x) for x in v][:500] if isinstance(v, list) else []
         elif k == "channels":
             v = {p: str(u).strip()[:300] for p, u in (v.items() if isinstance(v, dict) else []) if p in PLATFORMS and str(u).strip()}
         elif k == "accounts":
@@ -192,3 +196,31 @@ def read_log(cid, n=40) -> list:
         return []
     lines = f.read_text(encoding="utf-8").splitlines()[-n:]
     return [json.loads(x) for x in reversed(lines) if x.strip()]
+
+
+def mark_seen_upload(cid: str, video_id: str):
+    """Remember that a video has been processed for this creator."""
+    with _lock:
+        c = get(cid)
+        if not c:
+            return
+        seen = list(c.get("seen_upload_ids") or [])
+        if video_id not in seen:
+            seen.append(video_id)
+            c["seen_upload_ids"] = seen[-500:]
+            _write(c)
+
+
+def seed_seen_uploads(cid: str, video_ids: list):
+    """Seed existing video IDs so historical uploads aren't clipped all at once."""
+    with _lock:
+        c = get(cid)
+        if not c:
+            return
+        seen = list(c.get("seen_upload_ids") or [])
+        for vid in video_ids:
+            if vid and vid not in seen:
+                seen.append(vid)
+        c["seen_upload_ids"] = seen[-500:]
+        _write(c)
+
