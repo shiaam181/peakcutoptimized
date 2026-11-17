@@ -203,6 +203,16 @@ def _load_file(f: Path, uid: str):
     job.setdefault("creator", None)
     if job.get("source_path"):
         job["source_path"] = _remap(job["source_path"], f.parent)
+    if not job.get("source_path"):
+        cand = f.parent / "source.mp4"
+        if cand.is_file():
+            job["source_path"] = str(cand)
+            if "width" not in job or "height" not in job:
+                try:
+                    info = media.probe(cand)
+                    job.update(width=info["width"], height=info["height"])
+                except Exception:
+                    pass
     if job.get("source", {}).get("path"):
         job["source"]["path"] = _remap(job["source"]["path"], f.parent)
     if job.get("status") in ("queued", "running") and job.get("kind") != "live":
@@ -211,6 +221,7 @@ def _load_file(f: Path, uid: str):
     if job.get("status") == "live":
         job.update(status="done", stage="Recording paused by a server update", was_live=True)
     buffered = job.get("kind") == "live" and any((f.parent / "buffer").glob("*.ts"))
+    has_words = (f.parent / "words.json").is_file()
     for c in job.get("clips", []):
         if c.get("src"):
             c["src"] = _remap(c["src"], f.parent / "clips")
@@ -220,11 +231,11 @@ def _load_file(f: Path, uid: str):
                 job["recover"] = True
             elif job.get("resume"):
                 c["status"] = "queued"  # the video is being picked up again: this clip is made then
-            elif job.get("kind") != "live" and (f.parent / "words.json").is_file():
-                c["status"] = "queued"  # a single clip being re-made: jobs.start() makes it again
+            elif job.get("kind") != "live" and has_words:
+                c["status"] = "queued"  # an interrupted clip: jobs.start() picks it up automatically
                 job.setdefault("remake", []).append(c["id"])
             else:
-                c.update(status="error", error="Interrupted by a restart. Open it and press Save and re-make.")
+                c.update(status="error", error="Interrupted by a restart. Press Retry to continue.")
     _jobs[job["id"]] = job
     _by_user.setdefault(uid, {})[job["id"]] = job
 
@@ -368,7 +379,16 @@ def render_one(job, clip, words):
     try:
         off = clip.get("src_offset", 0.0)
         if not clip.get("src") and (not job.get("source_path") or not Path(job.get("source_path", "")).is_file()):
-            if job.get("source", {}).get("type") == "url":
+            if (d / "source.mp4").is_file():
+                job["source_path"] = str(d / "source.mp4")
+                if "width" not in job or "height" not in job:
+                    try:
+                        info = media.probe(d / "source.mp4")
+                        job.update(width=info["width"], height=info["height"])
+                    except Exception:
+                        pass
+                save(job)
+            elif job.get("source", {}).get("type") == "url":
                 p = media.download(job["source"]["url"], d, int(job["options"].get("quality", 720)))
                 info = media.probe(p)
                 job.update(source_path=str(p), width=info["width"], height=info["height"])
@@ -698,18 +718,31 @@ def _run_job(job):
     fetch.shutdown(wait=False)
     del audio
     clips = job["clips"]
+    successful = [c for c in clips if c.get("status") == "done"]
+    failed = [c for c in clips if c.get("status") == "error"]
+
+    if successful:
+        if len(successful) == len(clips):
+            notice_msg = f"{len(clips)} clip{'s' if len(clips) != 1 else ''} ready"
+            stage = "Done"
+        else:
+            notice_msg = f"{len(successful)} of {len(clips)} clips ready ({len(failed)} interrupted)"
+            stage = f"{len(successful)} of {len(clips)} clips ready"
+    else:
+        notice_msg = f"Could not finish clips ({len(failed)} interrupted)" if failed else "Nothing clip-worthy found"
+        stage = "Interrupted - Retry available" if failed else "Done, but nothing clip-worthy was found"
+
     job["ai"] = {"model": model, "tokens": tokens, "log": notes[-5:],
                  "note": "The AI was unavailable, so clips were picked by loudness only." if clips and not model else ""}
-    stage = "Done" if clips else "Done, but nothing clip-worthy was found"
     _set(job, status="done", stage=stage, progress=1.0, took=round(time.time() - t0))
     try:
         from . import notices
         name = job.get("title") or job["source"].get("name") or "your video"
-        notices.add(job.get("user"), "clips", f"{len(clips)} clip{'s' if len(clips) != 1 else ''} ready" if clips else "Nothing clip-worthy found",
+        notices.add(job.get("user"), "clips", notice_msg,
                     name, f"/app/creators/{job['creator']}" if job.get("creator") else "/app/videos")
     except Exception:  # noqa: BLE001
         pass
-    creators.log(job["creator"], f"Video finished with {len(clips)} clips in {round(time.time() - t0)}s: {job['title']}")
+    creators.log(job["creator"], f"Video finished: {stage} ({len(successful)}/{len(clips)} clips rendered in {round(time.time() - t0)}s): {job['title']}")
 
 
 def _worker(quick_only=False):

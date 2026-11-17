@@ -932,19 +932,36 @@ def upload_cancel(upid: str):
 
 
 @app.post("/api/jobs/{jid}/clips/{cid}/render")
-def rerender(jid: str, cid: str, body: dict = Body(...)):
+def rerender(jid: str, cid: str, body: dict = Body(default={})):
     job = _job_or_404(jid)
     clip = next((c for c in job["clips"] if c["id"] == cid), None)
     if not clip:
         raise HTTPException(404, "No such clip")
     if job["status"] in ("queued", "running") or clip.get("status") in ("queued", "rendering"):
         raise HTTPException(409, "This clip is still being made. Try again when it has finished.")
-    _throttle("render:" + ctx.uid(), 20, 600, "That's a lot of re-makes in a short time. Wait a few minutes.")
+    _throttle("render:" + ctx.uid(), 40, 600, "That's a lot of re-makes in a short time. Wait a few minutes.")
     try:
-        jobs.request_render(jid, cid, body)
+        jobs.request_render(jid, cid, body or {})
     except (ValueError, TypeError) as e:
         raise HTTPException(400, str(e))
     return jobs.public(job)
+
+
+@app.post("/api/jobs/{jid}/retry-failed")
+def retry_failed(jid: str):
+    job = _job_or_404(jid)
+    if job["status"] in ("queued", "running"):
+        raise HTTPException(409, "This video is still being processed.")
+    failed = [c for c in job.get("clips", []) if c.get("status") == "error"]
+    if not failed:
+        return {"retried": 0}
+    for c in failed:
+        try:
+            jobs.request_render(jid, c["id"], {})
+        except Exception:
+            pass
+    ctx.bump()
+    return {"retried": len(failed)}
 
 
 @app.delete("/api/jobs/{jid}")
