@@ -948,11 +948,13 @@ def rerender(jid: str, cid: str, body: dict = Body(default={})):
 
 
 @app.post("/api/jobs/{jid}/retry-failed")
-def retry_failed(jid: str):
+def retry_failed(jid: str, body: dict = Body(default={})):
     job = _job_or_404(jid)
-    if job["status"] in ("queued", "running"):
-        raise HTTPException(409, "This video is still being processed.")
-    failed = [c for c in job.get("clips", []) if c.get("status") == "error"]
+    clip_id = (body or {}).get("clip_id")
+    if clip_id:
+        failed = [c for c in job.get("clips", []) if c["id"] == clip_id]
+    else:
+        failed = [c for c in job.get("clips", []) if c.get("status") == "error"]
     if not failed:
         return {"retried": 0}
     for c in failed:

@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 import yt_dlp
 
-from . import alerts, auth, config, creators, ctx, jobs, media
+from . import alerts, auth, config, creators, ctx, jobs, media, profiles
 
 log = logging.getLogger("studio.watcher")
 
@@ -43,20 +43,69 @@ def normalize_videos_url(url: str) -> str:
     return clean
 
 
-def fetch_recent_videos(channel_url: str, limit: int = 5) -> list:
+def _fetch_youtube_rss(channel_url: str, limit: int = 5, channel_id: str = None) -> list:
+    """Fetch videos from YouTube channel via RSS feed in < 0.5s."""
+    import html as html_lib
+    import urllib.request
+    clean = re.sub(r"[?#].*$", "", str(channel_url or "").strip()).rstrip("/")
+    if not clean and not channel_id:
+        return []
+    if clean and not re.match(r"^https?://", clean):
+        clean = "https://" + clean
+    m = re.search(r"/channel/(UC[0-9A-Za-z_-]{22})", clean)
+    cid = channel_id or (m.group(1) if m else None)
+    if not cid:
+        try:
+            req = urllib.request.Request(clean, headers=profiles.UA)
+            with urllib.request.urlopen(req, timeout=5) as r:
+                page_html = r.read(500_000).decode("utf-8", errors="ignore")
+            m = (
+                re.search(r'channel_id=(UC[0-9A-Za-z_-]{22})', page_html)
+                or re.search(r'"channelId":"(UC[0-9A-Za-z_-]{22})"', page_html)
+                or re.search(r'"externalId":"(UC[0-9A-Za-z_-]{22})"', page_html)
+                or re.search(r'/channel/(UC[0-9A-Za-z_-]{22})', page_html)
+                or re.search(r'itemprop="channelId"\s+content="(UC[0-9A-Za-z_-]{22})"', page_html)
+                or re.search(r'itemprop="identifier"\s+content="(UC[0-9A-Za-z_-]{22})"', page_html)
+            )
+            if m:
+                cid = m.group(1)
+        except Exception:
+            pass
+    if cid:
+        feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}"
+        try:
+            req = urllib.request.Request(feed_url, headers=profiles.UA)
+            with urllib.request.urlopen(req, timeout=5) as fr:
+                xml = fr.read(500_000).decode("utf-8", errors="ignore")
+            items = re.findall(r"<entry>[\s\S]*?<yt:videoId>([^<]+)</yt:videoId>[\s\S]*?<title>([^<]+)</title>[\s\S]*?</entry>", xml)
+            results = []
+            for vid, title in items[:limit]:
+                t = html_lib.unescape(title.strip())
+                results.append({
+                    "id": vid.strip(),
+                    "title": t,
+                    "duration": 0,
+                    "url": f"https://www.youtube.com/watch?v={vid.strip()}",
+                })
+            if results:
+                return results
+        except Exception:
+            pass
+    return []
+
+
+def fetch_recent_videos(channel_url: str, limit: int = 5, channel_id: str = None) -> list:
     """Fetch recent video uploads from a channel without downloading."""
+    if "youtube.com" in channel_url or "youtu.be" in channel_url or channel_id:
+        rss_vids = _fetch_youtube_rss(channel_url, limit, channel_id=channel_id)
+        if rss_vids:
+            return rss_vids
+
     vurl = normalize_videos_url(channel_url)
     if not vurl:
         return []
-    opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "extract_flat": True,
-        "playlistend": limit,
-        "logger": _QuietLogger(),
-    }
     try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
+        with media._ydl({"extract_flat": True, "playlistend": limit, "socket_timeout": 15}) as ydl:
             info = ydl.extract_info(vurl, download=False)
             entries = info.get("entries") or []
             results = []
@@ -86,13 +135,14 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
         return []
     # Channel URL: primary channel or youtube platform channel
     channel_url = c.get("channel") or (c.get("channels") or {}).get("youtube")
-    if not channel_url:
+    channel_id = c.get("channel_id")
+    if not channel_url and not channel_id:
         return []
 
     min_duration = int(c.get("min_upload_duration") or 300)   # default 5 minutes
     clip_count = int(c.get("auto_clip_count") or 10)         # default 10 clips
 
-    videos = fetch_recent_videos(channel_url, limit=6)
+    videos = fetch_recent_videos(channel_url, limit=6, channel_id=channel_id)
     if not videos:
         return []
 

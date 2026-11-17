@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ShineCut</title>
-<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg?v=shinecut4">
+<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg?v=shinecut10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@300&family=Archivo+Black&family=Anton&family=Poppins:wght@800&display=swap" rel="stylesheet">
@@ -818,7 +818,7 @@ dialog[open]{animation:fadein .16s ease}
 <body>
 <div class="app" id="app">
   <aside class="side" aria-label="Sidebar">
-    <div class="side-head"><img class="logo" src="/brand/logo-light.svg?v=shinecut4" alt="ShineCut"><img class="mark" src="/brand/favicon.svg?v=shinecut4" alt="ShineCut">
+    <div class="side-head"><img class="logo" src="/brand/logo-light.svg?v=shinecut10" alt="ShineCut"><img class="mark" src="/brand/favicon.svg?v=shinecut10" alt="ShineCut">
       <button class="icon-btn collapse" data-act="collapse" id="collapseBtn" aria-label="Collapse sidebar"></button></div>
     <nav class="nav" id="nav" aria-label="Main"></nav>
     <div class="side-foot" id="foot"></div>
@@ -1681,10 +1681,7 @@ function postPills(c) {
 function clipHtml(j, c) {
   const m = `/media/${j.id}/`, a = `data-j="${j.id}" data-c="${esc(c.id)}"`;
   const body = c.status === "done" ? `<img src="${m}${esc(c.cover)}?v=${c.version}" alt="" loading="lazy"><span class="veil"><span>${ic("play")}</span></span>`
-    : c.status === "error" ? `<div class="making clip-err-box" style="animation:none;color:var(--bad);background:var(--bad-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;text-align:center;position:absolute;inset:0">
-        <span style="font-size:12px;line-height:1.3;font-weight:600">Could not make clip</span>
-        <button type="button" class="btn sub mini retry-btn" data-act="retryclip" ${a} style="pointer-events:auto;z-index:4;font-size:11px;font-weight:700;padding:6px 12px;background:#fff;color:var(--bad);border:1px solid currentColor;border-radius:6px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06)">↻ Retry clip</button>
-      </div>`
+    : c.status === "error" ? `<span class="making" style="animation:none;color:var(--bad);background:var(--bad-soft)">Could not make this clip. Click Retry below.</span>`
     : `<span class="making">${c.status === "rendering" ? "Making this clip…" : "Waiting its turn…"}</span>`;
   const key = `c:${j.id}:${c.id}`, busyClip = c.status === "queued" || c.status === "rendering";
   return `<article class="clip ${sel().has(key) ? "picked" : ""}">
@@ -1700,6 +1697,7 @@ function clipHtml(j, c) {
         <button class="btn sm icon ghost" data-act="copy" ${a} title="Copy post text" aria-label="Copy post text">${ic("copy")}</button>
         ${busyClip ? "" : `<button class="btn sm icon ghost" data-act="delclip" ${a} title="Delete this clip" aria-label="Delete this clip">${ic("trash")}</button>`}
         <span class="grow"></span>
+        ${c.status === "error" ? `<button type="button" class="btn sm" data-act="retryclip" ${a} style="color:var(--bad);background:var(--bad-soft);border:1px solid currentColor;font-weight:600">↻ Retry</button>` : ""}
         ${c.status === "done" ? `<button class="btn sm" data-act="openclip" ${a}>${ic("send")}Post</button>` : ""}
       </div>
     </div></article>`;
@@ -2379,6 +2377,23 @@ document.addEventListener("click", async e => {
     if (a === "pwsave") {
       await send("/api/auth/password", {current:$("#pw_cur")?.value || "", new:$("#pw_new").value});
       toast("Password changed. Other devices were signed out.", "ok"); return drawSettings();
+    }
+    if (a === "retryclip" || a === "retryjob") {
+      b.disabled = true;
+      const was = b.innerHTML;
+      b.innerHTML = "↻ Retrying…";
+      try {
+        const jid = d.j;
+        await send(`/api/jobs/${jid}/retry-failed`, d.c ? {clip_id: d.c} : {}, "POST");
+        toast("Retrying clip rendering from where it stopped…", "ok");
+        await tick();
+      } catch (err) {
+        toast(err.message || "Failed to retry", "bad");
+      } finally {
+        b.disabled = false;
+        b.innerHTML = was;
+      }
+      return;
     }
     if (a === "delclip") {
       if (!await ask("Delete this clip?", "The clip is removed for good. The video and its other clips stay.", "Delete clip", true)) return;
