@@ -78,7 +78,14 @@ def install_fonts():
             shutil.copyfile(f, config.FONTS_DIR / f.name)
 
 
-LAYOUTS = {"blur": "Full frame + blurred fill", "zoom": "Zoomed in + blurred fill", "crop": "Fill the screen (centre crop)"}
+LAYOUTS = {
+    "auto": "Auto-detect (Facecam / Podcast Split / Blur)",
+    "facecam": "Facecam (gameplay top, cam bottom)",
+    "split": "Split screen (podcast multicam)",
+    "blur": "Full frame + blurred fill",
+    "crop": "Fill the screen (centre crop)",
+    "zoom": "Zoomed in + blurred fill",
+}
 
 
 def _ts(t):
@@ -110,12 +117,16 @@ def _groups(words, per):
 
 def geometry(src_w, src_h, layout):
     """Where the video sits in the 1080x1920 frame, and where hook and captions go."""
-    if src_h >= src_w and layout != "crop":
+    if src_h >= src_w and layout not in ("crop", "vertical"):
         layout = "crop"  # already vertical or square: nothing to gain from a blurred fill
-    if layout == "blur":
+    if layout in ("blur", "auto"):
         fg_h = min(H, int(round(W * src_h / src_w / 2)) * 2)
     elif layout == "zoom":
         fg_h = 1000
+    elif layout == "facecam":
+        return layout, H, 180, 1165
+    elif layout == "split":
+        return layout, H, 180, 970
     else:
         fg_h = H
     top = (H - fg_h) // 2
@@ -245,7 +256,36 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     """Writes <name>.mp4, <name>.jpg and <name>.ass into out_dir. Returns file names."""
     out_dir.mkdir(parents=True, exist_ok=True)
     start, end = clip["start"], clip["end"]
-    layout, fg_h, hook_y, cap_y = geometry(src_w, src_h, clip.get("layout", "blur"))
+    req_layout = clip.get("layout", "auto")
+    dur = max(1.0, end - start)
+
+    custom_filter = None
+    applied_layout = req_layout
+
+    # Facecam and Podcast Split Detection (ClipKaro multicam & facecam engine)
+    if req_layout in ("facecam", "split", "auto") and src_w > src_h:
+        try:
+            from . import director
+            if req_layout in ("facecam", "auto"):
+                cam = director.detect_facecam(src, dur, src_w, src_h)
+                if cam:
+                    custom_filter, cap_y, hook_y = director.build_facecam_filter(cam, src_w, src_h, config.OUT_FPS)
+                    applied_layout = "facecam"
+
+            if not custom_filter and req_layout in ("split", "auto"):
+                pod = director.detect_podcast_faces(src, start, dur, src_w, src_h)
+                if pod:
+                    custom_filter, cap_y, hook_y = director.build_split_filter(pod["top"], pod["bottom"], src_w, src_h, config.OUT_FPS)
+                    applied_layout = "split"
+        except Exception:
+            custom_filter = None
+
+    if not custom_filter:
+        fallback = "blur" if req_layout in ("auto", "facecam", "split") else req_layout
+        applied_layout, fg_h, hook_y, cap_y = geometry(src_w, src_h, fallback)
+    else:
+        fg_h = H
+
     ass = build_ass(words, start, end, clip.get("hook", ""), clip.get("style", "bounce"),
                     clip.get("highlight_words", []), hook_y, cap_y)
     # The clip is made in a short work folder and moved into place afterwards. The caption step of ffmpeg cannot
@@ -254,18 +294,19 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     # break the filter syntax).
     work = Path(tempfile.mkdtemp(prefix="pk"))
     try:
-        return _render_in(work, src, out_dir, name, start, end, layout, fg_h, ass)
+        return _render_in(work, src, out_dir, name, start, end, applied_layout, fg_h, ass, custom_filter=custom_filter)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
 
-def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str) -> dict:
+def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, custom_filter: str = None) -> dict:
     global _qsv_ok
     (work / f"{name}.ass").write_text(ass, encoding="utf-8")
     (work / "f").mkdir()
     for f in config.FONTS_DIR.glob("*.ttf"):
         shutil.copyfile(f, work / "f" / f.name)
-    fc = _filter(layout, fg_h) + f"[v0]ass={name}.ass:fontsdir=f[v]"
+    v_filter = custom_filter if custom_filter else _filter(layout, fg_h)
+    fc = v_filter + f"[v0]ass={name}.ass:fontsdir=f[v]"
     base = ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.2f}", "-t", f"{end - start:.2f}", "-i", str(src),
             "-filter_complex", fc, "-map", "[v]", "-map", "0:a:0", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",
             "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", "-pix_fmt"]
