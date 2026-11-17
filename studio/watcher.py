@@ -119,9 +119,23 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
             creators.log(cid, f"Auto-clipping armed: tracking future uploads (seeded {len(all_ids)} existing videos)")
             return []
         else:
-            # Seed everything except the top video
-            other_ids = [v["id"] for v in videos[1:]]
+            # Workspace created or forced: pick the top long video to clip, seed all other videos
+            target_vid = long_videos[0]["id"] if long_videos else None
+            other_ids = [v["id"] for v in videos if not target_vid or v["id"] != target_vid]
             creators.seed_seen_uploads(cid, other_ids)
+            seen.update(other_ids)
+    elif force_clip_latest and long_videos:
+        # User explicitly requested latest: allow if not currently running or queued
+        latest_id = long_videos[0]["id"]
+        try:
+            active_ids = {
+                extract_video_id((j.get("source") or {}).get("url", ""))
+                for j in jobs.all_jobs() if j.get("status") in ("queued", "running")
+            }
+        except Exception:
+            active_ids = set()
+        if latest_id not in active_ids:
+            seen.discard(latest_id)
 
     queued_jobs = []
     for v in long_videos:

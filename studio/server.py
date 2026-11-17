@@ -1178,6 +1178,14 @@ def new_creator(body: dict = Body(...)):
         raise HTTPException(400, str(e))
     if c.get("channels"):
         profiles.refresh(c["id"], force=True)
+    if c.get("channel") or c.get("channels"):
+        from . import watcher
+        uid, cid = ctx.uid(), c["id"]
+        def _auto_clip():
+            time.sleep(1.5)
+            with ctx.as_user(uid):
+                watcher.check_creator_uploads(cid, force_clip_latest=True)
+        threading.Thread(target=_auto_clip, daemon=True).start()
     return c
 
 
@@ -1196,6 +1204,14 @@ def edit_creator(cid: str, body: dict = Body(...)):
         s.settings = c  # new settings apply to the running recording straight away
     if "channels" in body or "channel" in body:
         profiles.refresh(cid, force=True)
+        if not c.get("seen_upload_ids"):
+            from . import watcher
+            uid = ctx.uid()
+            def _auto_clip():
+                time.sleep(1.5)
+                with ctx.as_user(uid):
+                    watcher.check_creator_uploads(cid, force_clip_latest=True)
+            threading.Thread(target=_auto_clip, daemon=True).start()
     if body.get("auto_watch") and c.get("auto_watch") and not s:
         live.check_now(cid)    # if they are live right now, recording starts within seconds
     if body.get("auto_clip_uploads") and c.get("auto_clip_uploads"):
@@ -1211,7 +1227,7 @@ def trigger_check_uploads(cid: str, body: dict = Body(default={})):
     if not c:
         raise HTTPException(404, "No such creator")
     from . import watcher
-    force = bool((body or {}).get("force"))
+    force = bool((body or {}).get("force", True))
     try:
         queued = watcher.check_creator_uploads(cid, force_clip_latest=force)
         return {"ok": True, "count": len(queued), "jobs": [jobs.public(j) for j in queued]}

@@ -16,7 +16,7 @@ _lock = threading.RLock()
 
 DEFAULTS = {"name": "", "channel": "", "style": "bounce", "layout": "blur", "min_len": 30, "max_len": 50,
             "max_clips": 6, "min_score": 80, "auto_watch": False, "buffer_min": 20, "live_per_hour": 4, "ai_every_min": 3, "ai_only_on_spike": True, "auto_jump_pct": 60,
-            "auto_clip_uploads": False, "auto_clip_count": 10, "min_upload_duration": 300, "seen_upload_ids": [],
+            "auto_clip_uploads": True, "auto_clip_count": 10, "min_upload_duration": 300, "seen_upload_ids": [],
             "plan": "free", "decide_mode": "both", "must_clip_min": 0, "min_gap_min": 2,
             "trigger_words": "clip that, clip it",
             "autopost": False, "accounts": [], "post_min_score": 75, "post_gap_min": 45, "daily_cap": 6,

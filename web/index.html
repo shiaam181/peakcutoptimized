@@ -2340,7 +2340,7 @@ document.addEventListener("click", async e => {
         <div class="dlg-foot"><button class="btn" value="no" formnovalidate>Cancel</button><button class="btn primary" value="yes">Create workspace</button></div></form>`;
       dlg.onclose = async () => {
         if (dlg.returnValue !== "yes") return;
-        try { const c = await send("/api/creators", {name:$("#nc_name").value, channel:$("#nc_chan").value}); await tick(); go("c:" + c.id, c.channel ? "clips" : "setup"); toast("Workspace created", "ok"); }
+        try { const c = await send("/api/creators", {name:$("#nc_name").value, channel:$("#nc_chan").value}); await tick(); go("c:" + c.id, c.channel ? "clips" : "setup"); toast(c.channel ? "Workspace created! Fetching latest video for 10 clips..." : "Workspace created", "ok"); }
         catch (err) { toast(err.message, "bad"); }
       };
       let seq = 0, timer = 0, auto = "";
