@@ -108,7 +108,7 @@ _lock = threading.RLock()
 on_clip_ready: list = []   # callbacks (job, clip), run once when a clip first finishes
 
 DEFAULTS = {"max_clips": 6, "min_len": 30, "max_len": 50, "style": "bounce", "layout": "auto", "quality": 1080,
-            "range_start": None, "range_end": None}
+            "range_start": None, "range_end": None, "campaign": "", "req_hook": "", "req_tags": ""}
 
 
 LIMITS = {"max_clips": (1, 20), "min_len": (5, 120), "max_len": (10, 180), "quality": (360, 2160)}
@@ -127,6 +127,9 @@ def clean_options(options) -> dict:
             v = v if v in render.STYLES else DEFAULTS["style"]
         elif k == "layout":
             v = v if v in render.LAYOUTS else DEFAULTS["layout"]
+        elif k in ("campaign", "req_hook", "req_tags"):
+            out[k] = str(v).strip()[:2000]
+            continue
         else:                                    # range_start, range_end: seconds into the video
             v = float(v)
             if not math.isfinite(v) or v < 0:
@@ -692,7 +695,8 @@ def _run_job(job):
         quota = max(1, math.ceil(left / (len(blocks) - bi)))
         s0 = int((a - lo) / 16000)
         found, ai = brain.find_clips(bw, db[s0: s0 + int((b - a) / 16000) + 1], (b - a) / 16000, job["title"],
-                                     job["uploader"], quota, int(o["min_len"]), int(o["max_len"]), notes.append)
+                                     job["uploader"], quota, int(o["min_len"]), int(o["max_len"]), notes.append,
+                                     campaign=str(o.get("campaign") or ""), req_hook=str(o.get("req_hook") or ""), req_tags=str(o.get("req_tags") or ""))
         tokens += ai.get("tokens", 0)
         model = ai.get("model") or model
         if ai.get("note"):

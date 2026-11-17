@@ -1373,6 +1373,18 @@ function drawAdd(variant) {
       <button class="btn primary" id="goBtn">${ic("scissors")}Make clips</button>
     </div>
     <div class="composer-opts" inert><div class="og">
+      <div class="ob wide" style="background:var(--frame-2);color:#fff">
+        <div class="ot" style="display:flex;align-items:center;gap:8px;color:#FFB27A">
+          <span>🎯 Campaign & Bounty Brief (Content Rewards / Whop / Brands)</span>
+          <span class="pill" style="font-size:10px;font-weight:700;background:var(--brand);color:var(--brand-ink);border-radius:4px;padding:1px 6px">BOUNTY MODE</span>
+        </div>
+        <p class="help" style="color:var(--frame-dim);margin-bottom:8px">Paste your campaign brief or focus topic. The AI will strictly filter the footage to find and qualify moments matching this brief.</p>
+        <textarea id="o_campaign" rows="2" placeholder="e.g. Clip Jake Paul discussing the PFL and MVP merger. Main storyline must be the merger. Prioritize high engagement moments." style="font-size:13px;width:100%;background:#1E140E;border:1px solid var(--frame-line);color:#fff;border-radius:8px;padding:8px 10px"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <label class="f" style="color:var(--frame-dim)"><span style="font-size:11px">Required Hook / On-Screen Text (Optional)</span><input id="o_req_hook" placeholder="e.g. MVP x PFL MERGER" style="height:34px;font-size:12px;background:#1E140E;border:1px solid var(--frame-line);color:#fff"></label>
+          <label class="f" style="color:var(--frame-dim)"><span style="font-size:11px">Campaign Hashtags & Mentions (Optional)</span><input id="o_req_tags" placeholder="e.g. #PFL #MVP @jakepaul" style="height:34px;font-size:12px;background:#1E140E;border:1px solid var(--frame-line);color:#fff"></label>
+        </div>
+      </div>
       <div class="ob wide"><div class="ot">Clips</div><div class="nsteps">
         ${stepper("o_max", "How many", c?.max_clips ?? 6, 1, 20, 1, "")}
         ${stepper("o_min", "Shortest", c?.min_len ?? 15, 5, 120, 5, "s")}
@@ -1446,7 +1458,12 @@ document.addEventListener("keydown", e => {
 const targetCreator = () => creatorId() || $("#o_creator")?.value || "";
 function jobOptions() {
   const n = id => { const v = $(id).value; return v === "" ? null : Number(v); };
-  const o = {max_clips:n("#o_max"), min_len:n("#o_min"), max_len:n("#o_maxlen"), style:$("#o_style").value, layout:$("#o_layout").value, quality:n("#o_quality")};
+  const o = {
+    max_clips:n("#o_max"), min_len:n("#o_min"), max_len:n("#o_maxlen"), style:$("#o_style").value, layout:$("#o_layout").value, quality:n("#o_quality"),
+    campaign: $("#o_campaign")?.value.trim() || "",
+    req_hook: $("#o_req_hook")?.value.trim() || "",
+    req_tags: $("#o_req_tags")?.value.trim() || ""
+  };
   if (n("#o_from") !== null) o.range_start = n("#o_from") * 60;
   if (n("#o_to") !== null) o.range_end = n("#o_to") * 60;
   return o;

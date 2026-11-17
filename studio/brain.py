@@ -107,17 +107,26 @@ def _fmt(lines):
                      for l in lines)
 
 
-def _tidy(c, s, e):
+def _tidy(c, s, e, req_tags="", req_hook=""):
     """Whatever the AI answered, only this shape ever leaves here: clamped numbers, short link-free text."""
     cat = str(c.get("category", "other")).lower()
     tags = c.get("hashtags") if isinstance(c.get("hashtags"), list) else []
     tags = [re.sub(r"\W", "", str(h))[:30] for h in tags if isinstance(h, (str, int))]
+    if req_tags:
+        extra_tags = [re.sub(r"\W", "", t)[:30] for t in req_tags.split() if t.strip()]
+        tags = list(dict.fromkeys(extra_tags + tags))
     words = c.get("highlight_words") if isinstance(c.get("highlight_words"), list) else []
+    hook = roman.to_roman(_text(c.get("hook"), 60)).upper()
+    if req_hook and req_hook.upper() not in hook:
+        hook = f"{req_hook.upper()} - {hook}"[:60].strip(" -")
+    desc = roman.to_roman(_text(c.get("description"), 300))
+    if req_tags and not any(t in desc for t in req_tags.split()[:3]):
+        desc = (desc + " " + req_tags)[:300].strip()
     return {
         "start": s, "end": e, "score": max(0, min(100, int(_num(c.get("score"))))),
         "category": cat if cat in CATEGORIES else "other",
-        "hook": roman.to_roman(_text(c.get("hook"), 60)).upper(), "title": roman.to_roman(_text(c.get("title"), 100)),
-        "description": roman.to_roman(_text(c.get("description"), 300)),
+        "hook": hook, "title": roman.to_roman(_text(c.get("title"), 100)),
+        "description": desc,
         "hashtags": [t for t in tags if t][:8],
         "highlight_words": [roman.to_roman(_text(h, 30)) for h in words][:8],
         "reason": _text(c.get("reason"), 200),
@@ -245,7 +254,8 @@ def fallback_by_loudness(db, words, n, max_len, duration):
     return picks
 
 
-def find_clips(words, db, duration, title="", uploader="", max_clips=6, min_len=15, max_len=60, log=print):
+def find_clips(words, db, duration, title="", uploader="", max_clips=6, min_len=15, max_len=60, log=print,
+               campaign="", req_hook="", req_tags=""):
     z = loud_zscore(db)
     lines = make_lines(words, z)
     if not lines:
@@ -257,11 +267,29 @@ def find_clips(words, db, duration, title="", uploader="", max_clips=6, min_len=
         windows.append((t, min(duration, t + WINDOW_SEC)))
         t += WINDOW_SEC - OVERLAP_SEC
     per_window = max(2, min(8, int(np.ceil(max_clips * 1.5 / len(windows))) + 1))
+
+    camp_block = ""
+    if campaign:
+        camp_block = f"""
+TARGET CAMPAIGN OBJECTIVE & MANDATORY REQUIREMENTS:
+The clips are being produced for a specific bounty / brand campaign. You MUST strictly follow this brief:
+\"\"\"
+{_safe(campaign, 1500)}
+\"\"\"
+MANDATORY SELECTION RULES:
+- ONLY pick moments where the topic, conversation, and action strictly match this campaign brief.
+- If a moment does not relate directly to this campaign, REJECT IT, even if high-energy.
+- The hook, title, and description MUST align with the campaign narrative and mandatory subjects.
+"""
+    if req_hook:
+        camp_block += f'\n- Hook requirement: On-screen hook or title MUST explicitly incorporate: "{_safe(req_hook, 60)}".\n'
+
     for a, b in windows:
         chunk = [l for l in lines if a <= l["s"] < b]
         if len(chunk) < 3:
             continue
         prompt = (HEAD.format(title=_safe(title) or "unknown", uploader=_safe(uploader) or "unknown", n=per_window)
+                  + camp_block
                   + RULES.format(min_len=min_len, max_len=max_len, transcript=_fmt(chunk)))
         try:
             out, used_model, spent = ask_ai(prompt, purpose="Video: finding clips")
@@ -280,7 +308,7 @@ def find_clips(words, db, duration, title="", uploader="", max_clips=6, min_len=
             continue
         if _overlaps(s, e, clips):
             continue  # overlaps a better clip
-        clips.append(_tidy(c, s, e))
+        clips.append(_tidy(c, s, e, req_tags=req_tags, req_hook=req_hook))
         if len(clips) >= max_clips:
             break
     clips.sort(key=lambda c: c["start"])
