@@ -94,3 +94,4 @@ with open('web/brand/logo.svg', 'w', encoding='utf-8') as f:
     f.write(svg_dark)
 
 print('Updated logo-light.svg and logo.svg successfully. Total width:', total_w)
+

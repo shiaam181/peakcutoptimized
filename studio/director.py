@@ -252,3 +252,4 @@ def build_split_filter(top_box, bot_box, src_w: int, src_h: int, fps: int = 30):
         f"[sp_top][sp_bot]vstack=inputs=2,setsar=1[v0];"
     ]
     return "".join(parts), half + 10, 180  # cap_y (at center seam), hook_y (top)
+

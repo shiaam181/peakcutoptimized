@@ -13,3 +13,4 @@ for fpath in files:
         with open(fpath, 'w', encoding='utf-8') as f:
             f.write(new_content)
         print('Updated', fpath)
+
