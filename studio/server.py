@@ -10,8 +10,11 @@ import re
 import shutil
 import threading
 import time
+import warnings
 from pathlib import Path
 from urllib.parse import quote, urlparse
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import sqlalchemy as sa
 import uvicorn
