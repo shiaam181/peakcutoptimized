@@ -146,6 +146,8 @@ def list_models(provider_id=None, address=None, with_key=None) -> list:
         raise ValueError("Choose one of the AI services in the list.")
     k = str(with_key or "").strip() or (c["key"] if c["provider"] == p else "")
     base = str(address or "").strip().rstrip("/") or (c["base_url"] if c["provider"] == p else "") or PROVIDERS[p][1]
+    if base.endswith("/chat/completions"):
+        base = base[:-len("/chat/completions")].rstrip("/")
     if not base:
         raise ValueError("Enter the service's address first.")
     how = PROVIDERS[p][2]
@@ -154,7 +156,10 @@ def list_models(provider_id=None, address=None, with_key=None) -> list:
     elif how == "anthropic":
         r = httpx.get(f"{base}/models", params={"limit": 200}, headers={"x-api-key": k, "anthropic-version": "2023-06-01"}, timeout=20)
     else:
-        r = httpx.get(f"{base}/models", headers={"Authorization": f"Bearer {k}"} if k else {}, timeout=20)
+        headers = {"Authorization": f"Bearer {k}"} if k else {}
+        r = httpx.get(f"{base}/models", headers=headers, timeout=20)
+        if r.status_code == 404 and "/v1" not in base:
+            r = httpx.get(f"{base}/v1/models", headers=headers, timeout=20)
     if r.status_code != 200:
         raise AIError(f"HTTP {r.status_code} {r.text[:200].replace(k or chr(0), '<key>')}")
     data = r.json()
@@ -270,8 +275,17 @@ def _openai(model, prompt, schema):
     # Most services accept these two extras; a few models refuse one of them, so they are dropped on a refusal.
     extras = [{"temperature": 0.4, "response_format": {"type": "json_object"}}, {"response_format": {"type": "json_object"}}, {}]
     r = None
+    endpoint = base_url()
+    if not endpoint.endswith("/chat/completions"):
+        endpoint = f"{endpoint}/chat/completions"
     for extra in extras:
-        r = httpx.post(f"{base_url()}/chat/completions", json={**body, **extra}, headers=headers, timeout=180)
+        r = httpx.post(endpoint, json={**body, **extra}, headers=headers, timeout=180)
+        if r.status_code == 404 and "/v1/" not in endpoint:
+            # Fallback for base URLs provided without /v1
+            alt_endpoint = endpoint.replace("/chat/completions", "/v1/chat/completions")
+            r = httpx.post(alt_endpoint, json={**body, **extra}, headers=headers, timeout=180)
+            if r.status_code == 200:
+                endpoint = alt_endpoint
         if r.status_code not in (400, 422):
             break
     if r.status_code != 200:

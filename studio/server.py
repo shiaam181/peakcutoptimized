@@ -317,10 +317,8 @@ def _need_verified():
 
 # ================================================================ pages
 def _page(name, shared=False):
-    """A page. The browser keeps its copy and asks each time whether it has changed; when it has not, the answer
-    is a few bytes ("not modified") instead of the whole page again. Signed-in pages are never kept by anything
-    in between (a proxy or CDN), only by the person's own browser."""
-    return FileResponse(WEB / name, headers={"Cache-Control": ("public" if shared else "private") + ", no-cache"})
+    """A page. Signed-in pages are marked private so proxy/CDNs never cache them."""
+    return FileResponse(WEB / name, headers={"Cache-Control": ("public" if shared else "private") + ", no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
 
 
 _LANDING: dict = {}
