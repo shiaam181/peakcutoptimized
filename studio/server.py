@@ -1312,19 +1312,22 @@ def _ai_error(e) -> str:
 
 @app.get("/api/ai")
 def ai_get(request: Request):
-    _admin(request)
+    _me(request)
     return ai.public()
 
 
 @app.put("/api/ai")
 def ai_put(request: Request, body: dict = Body(...)):
-    _admin(request)
+    me_ = _me(request)
     k = body.get("key")
+    server_default = bool(body.get("server_default")) if me_.is_admin else False
     try:
         out = ai.save(body.get("provider"), body.get("models"), body.get("base_url") or "",
-                      None if k is None or (isinstance(k, str) and not k.strip() and not body.get("remove_key")) else str(k))
+                      None if k is None or (isinstance(k, str) and not k.strip() and not body.get("remove_key")) else str(k),
+                      server_default=server_default)
     except (ValueError, TypeError) as e:
         raise HTTPException(400, str(e))
+    ai.clear_problem()
     usage.forget_all()
     ctx.bump()
     return out
@@ -1332,7 +1335,7 @@ def ai_put(request: Request, body: dict = Body(...)):
 
 @app.post("/api/ai/models")
 def ai_models(request: Request, body: dict = Body(default={})):
-    _admin(request)
+    _me(request)
     _throttle("aimodels:" + ctx.uid(), 30, 600)
     try:
         return {"models": ai.list_models(body.get("provider"), body.get("base_url"), body.get("key"))}
@@ -1344,10 +1347,14 @@ def ai_models(request: Request, body: dict = Body(default={})):
 
 @app.post("/api/ai/test")
 def ai_test(request: Request):
-    _admin(request)
+    _me(request)
     _throttle("aitest:" + ctx.uid(), 20, 600)
     try:
-        return ai.test()
+        res = ai.test()
+        ai.clear_problem()
+        usage.forget_all()
+        ctx.bump()
+        return res
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:  # noqa: BLE001

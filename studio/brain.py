@@ -179,7 +179,8 @@ def ask_ai(prompt, schema=None, purpose="AI call"):
     if not config.ai_ready():
         raise RuntimeError("The AI is not set up on this server.")
     last = None
-    for model in ai.models():
+    all_models = ai.models()
+    for model in all_models:
         for attempt in range(3):
             try:
                 out, sent, wrote = ai.call(model, prompt, schema or SCHEMA)
@@ -188,8 +189,11 @@ def ask_ai(prompt, schema=None, purpose="AI call"):
                 return out, model, sent + wrote
             except Exception as e:  # noqa: BLE001
                 last = e
+                # If rate limited and we have backup models, immediately switch to the next model
+                if ("429" in str(e) or "exhausted" in str(e).lower()) and len(all_models) > 1:
+                    break
                 if "HTTP 429" in str(e) or "HTTP 5" in str(e):
-                    time.sleep(4 * (attempt + 1))
+                    time.sleep(2 * (attempt + 1))
                     continue
                 break
     ai.note_problem(last)

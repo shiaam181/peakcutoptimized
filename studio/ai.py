@@ -15,7 +15,7 @@ import threading
 
 import httpx
 
-from . import config
+from . import config, ctx
 
 # name -> (label shown on the pages, address, how it is spoken to, where to get a key, an example model id)
 PROVIDERS = {
@@ -33,32 +33,49 @@ NO_KEY = {"ollama", "custom"}       # a model running on your own machine needs 
 
 # ---------------------------------------------------------------- the settings in use
 _lock = threading.Lock()
-_saved = {"at": None, "data": {}}
+_saved = {}
 
 
-def _file():
+def _file(uid=None, allow_default=True):
+    if not config.ACCOUNTS:
+        return config.DATA_DIR / "ai.json"
+    try:
+        u = uid or ctx.uid()
+    except Exception:
+        u = None
+    if not u or u == "u_local":
+        return config.DATA_DIR / "ai.json"
+    user_file = config.user_dir(u) / "ai.json"
+    if user_file.is_file() or not allow_default:
+        return user_file
     return config.DATA_DIR / "ai.json"
 
 
-def _from_dashboard() -> dict:
-    """What was saved from the dashboard, read again only when the file changes."""
-    f = _file()
+def _from_dashboard(uid=None) -> dict:
+    """What was saved for this user or server-wide."""
+    f = _file(uid)
     try:
         at = f.stat().st_mtime_ns
     except OSError:
         at = 0
-    if _saved["at"] != at:
+    try:
+        u = uid or ctx.uid()
+    except Exception:
+        u = "global"
+    cached = _saved.get(u) if isinstance(_saved, dict) else None
+    if not cached or cached.get("at") != at or cached.get("file") != str(f):
         try:
             data = json.loads(f.read_text(encoding="utf-8")) if at else {}
         except (OSError, ValueError):
             data = {}
-        _saved.update(at=at, data=data if isinstance(data, dict) else {})
-    return _saved["data"]
+        cached = {"at": at, "file": str(f), "data": data if isinstance(data, dict) else {}}
+        _saved[u] = cached
+    return cached.get("data", {})
 
 
-def current() -> dict:
-    """Provider, models, address and key: what the dashboard saved, or else what .env says."""
-    d = _from_dashboard()
+def current(uid=None) -> dict:
+    """Provider, models, address and key: what the user saved, or else what .env says."""
+    d = _from_dashboard(uid)
     p = str(d.get("provider") or config.AI_PROVIDER or "").strip().lower()
     return {"provider": ALIASES.get(p, p),
             "models": list(d["models"]) if d.get("provider") else list(config.AI_MODELS),
@@ -66,44 +83,47 @@ def current() -> dict:
             "key": str(d["key"]) if d.get("provider") and "key" in d else config.ai_key()}
 
 
-def provider() -> str:
-    return current()["provider"]
+def provider(uid=None) -> str:
+    return current(uid)["provider"]
 
 
-def models() -> list:
-    return current()["models"]
+def models(uid=None) -> list:
+    return current(uid)["models"]
 
 
-def key() -> str:
-    return current()["key"]
+def key(uid=None) -> str:
+    return current(uid)["key"]
 
 
-def label() -> str:
-    return PROVIDERS.get(provider(), ("",))[0]
+def label(uid=None) -> str:
+    return PROVIDERS.get(provider(uid), ("",))[0]
 
 
-def base_url() -> str:
-    c = current()
+def base_url(uid=None) -> str:
+    c = current(uid)
     return c["base_url"] or PROVIDERS.get(c["provider"], ("", ""))[1]
 
 
-def ready() -> bool:
-    c = current()
-    return bool(c["provider"] in PROVIDERS and c["models"] and base_url() and (c["key"] or c["provider"] in NO_KEY))
+def ready(uid=None) -> bool:
+    c = current(uid)
+    return bool(c["provider"] in PROVIDERS and c["models"] and base_url(uid) and (c["key"] or c["provider"] in NO_KEY))
 
 
-def public() -> dict:
+def public(uid=None) -> dict:
     """What the settings page may see. The key itself never leaves the server: only whether there is one, and
     its last four characters so the owner can tell which key it is."""
-    c = current()
+    c = current(uid)
+    d = _from_dashboard(uid)
+    is_personal = bool(d.get("provider")) and _file(uid, allow_default=False).is_file()
     return {"provider": c["provider"], "models": c["models"], "base_url": c["base_url"], "has_key": bool(c["key"]),
-            "key_hint": c["key"][-4:] if len(c["key"]) >= 12 else "", "ready": ready(), "label": label(),
-            "saved_here": bool(_from_dashboard().get("provider")),
+            "key_hint": c["key"][-4:] if len(c["key"]) >= 12 else "", "ready": ready(uid), "label": label(uid),
+            "saved_here": bool(d.get("provider")),
+            "is_personal": is_personal,
             "providers": [{"id": k, "label": v[0], "address": v[1], "needs_key": k not in NO_KEY, "key_url": v[3], "example": v[4]}
                           for k, v in PROVIDERS.items()]}
 
 
-def save(provider_id: str, model_ids, address: str = "", new_key=None) -> dict:
+def save(provider_id: str, model_ids, address: str = "", new_key=None, server_default: bool = False, uid=None) -> dict:
     """Save the choice made in the dashboard. `new_key` None keeps the key that is already there (the page never
     has it to send back); an empty string removes it."""
     p = ALIASES.get(str(provider_id or "").strip().lower(), str(provider_id or "").strip().lower())
@@ -111,7 +131,7 @@ def save(provider_id: str, model_ids, address: str = "", new_key=None) -> dict:
         raise ValueError("Choose one of the AI services in the list.")
     if isinstance(model_ids, str):
         model_ids = model_ids.split(",")
-    ms = [str(m).strip()[:120] for m in (model_ids or []) if str(m).strip()][:5]
+    ms = [str(m).strip()[:120] for m in (model_ids or []) if str(m).strip()][:20]
     if not ms:
         raise ValueError("Enter the model to use.")
     if any(not re.fullmatch(r"[\w.\-:/@]+", m) for m in ms):
@@ -121,12 +141,16 @@ def save(provider_id: str, model_ids, address: str = "", new_key=None) -> dict:
         raise ValueError("The address has to start with http:// or https://")
     if p == "custom" and not address:
         raise ValueError("A custom service needs its address, for example http://127.0.0.1:1234/v1")
-    old = current()
+    old = current(uid)
     k = old["key"] if new_key is None and old["provider"] == p else str(new_key or "").strip()[:400]
     if not k and p not in NO_KEY:
         raise ValueError("Paste the key for this service.")
     with _lock:
-        f = _file()
+        if server_default or not config.ACCOUNTS:
+            f = config.DATA_DIR / "ai.json"
+        else:
+            f = _file(uid, allow_default=False)
+        f.parent.mkdir(parents=True, exist_ok=True)
         tmp = f.with_suffix(".tmp")
         tmp.write_text(json.dumps({"provider": p, "models": ms, "base_url": address, "key": k}), encoding="utf-8")
         try:
@@ -134,8 +158,8 @@ def save(provider_id: str, model_ids, address: str = "", new_key=None) -> dict:
         except OSError:
             pass
         tmp.replace(f)
-        _saved["at"] = None
-    return public()
+        _saved.clear()
+    return public(uid)
 
 
 def list_models(provider_id=None, address=None, with_key=None) -> list:
@@ -184,7 +208,16 @@ class AIError(RuntimeError):
     pass
 
 
-problem = {"text": "", "at": 0.0}       # why the AI last failed, for the dashboard; cleared when it answers again
+_problems = {}
+problem = {"text": "", "at": 0.0}       # backwards compatibility
+
+
+def get_problem(uid=None) -> dict:
+    try:
+        u = uid or ctx.uid()
+    except Exception:
+        u = "global"
+    return _problems.get(u) or (problem if not config.ACCOUNTS else {"text": "", "at": 0.0})
 
 
 def explain(e) -> str:
@@ -202,15 +235,27 @@ def explain(e) -> str:
     return ""
 
 
-def note_problem(e):
+def note_problem(e, uid=None):
     import time
     why = explain(e)
     if why:
-        problem.update(text=why, at=time.time())
+        try:
+            u = uid or ctx.uid()
+        except Exception:
+            u = "global"
+        _problems[u] = {"text": why, "at": time.time()}
+        if not config.ACCOUNTS or u in ("global", "u_local"):
+            problem.update(text=why, at=time.time())
 
 
-def clear_problem():
-    problem.update(text="", at=0.0)
+def clear_problem(uid=None):
+    try:
+        u = uid or ctx.uid()
+    except Exception:
+        u = "global"
+    _problems.pop(u, None)
+    if not config.ACCOUNTS or u in ("global", "u_local"):
+        problem.update(text="", at=0.0)
 
 
 def _fail(r, model):

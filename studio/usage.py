@@ -60,9 +60,10 @@ def brief() -> dict:
     with db.engine.connect() as c:
         today = c.execute(sa.select(sa.func.count(), sa.func.coalesce(sa.func.sum(_tokens()), 0)).where(
             u.user_id == uid, u.t >= midnight)).first()
+    prob = ai.get_problem(uid)
     out = {"ready": ai.ready(), "provider": ai.label(), "model": (ai.models() or [""])[0],
            "today_calls": int(today[0]), "today_tokens": int(today[1]),
-           "problem": ai.problem["text"] if ai.problem["text"] and now - ai.problem["at"] < 6 * 3600 else ""}
+           "problem": prob["text"] if prob.get("text") and now - prob.get("at", 0) < 6 * 3600 else ""}
     _brief[uid] = (now, out)
     return dict(out)
 
