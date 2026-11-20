@@ -568,9 +568,9 @@ def _run_job(job):
         usage.set_context(job["creator"], meta["title"])
         span = (o["range_end"] or meta["duration"]) - (o["range_start"] or 0)
         pieces = span > LONG_VIDEO or meta["duration"] <= 0
-        if not pieces:  # shorter video: fetch all of it in the background while the audio is worked on
-            video = fetch.submit(media.download, src["url"], d, int(o["quality"]))
         audio_file = media.download_audio(src["url"], d, lambda p: _set(job, progress=0.03 + 0.1 * p))
+        if not pieces:  # shorter video: fetch video in background now that audio download finished
+            video = fetch.submit(media.download, src["url"], d, int(o["quality"]))
     else:
         pieces, audio_file = False, Path(src["path"])
         info = media.probe(audio_file)

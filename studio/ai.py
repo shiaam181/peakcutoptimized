@@ -224,8 +224,12 @@ def explain(e) -> str:
     """What went wrong with an AI call, in words the owner can act on."""
     text, low = str(e), str(e).lower()
     name = (models() or ["?"])[0]
-    if "404" in text or "not found" in low or "does not exist" in low or "unknown model" in low or "not_found" in low:
+    if "application not found" in low:
+        return f"The AI server at {base_url()} is offline (Railway returned 'Application not found'). Check your Railway deployment or use Gemini/Groq in Settings > AI."
+    if "404" in text and ("model" in low or "unknown model" in low or "does not exist" in low):
         return f"{label()} doesn't know the model \"{name}\". Open Settings, AI, press Find models and pick one from the list."
+    if "404" in text or "not found" in low:
+        return f"{label()} returned 404 Not Found at {base_url()}. Check that the service address is active."
     if "401" in text or "403" in text or "api key" in low or "api_key" in low or "unauthorized" in low or "permission" in low:
         return f"{label()} refused the key. Paste a working key under Settings, AI."
     if "429" in text or "quota" in low or "rate limit" in low or "exhausted" in low:

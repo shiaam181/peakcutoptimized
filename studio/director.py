@@ -222,10 +222,14 @@ def build_facecam_filter(cam: dict, src_w: int, src_h: int, fps: int = 30, react
     # Scale and center facecam
     target_cam_h = top_h if reaction_top else bot_h
     scale = max(W / max(1, cw_crop), target_cam_h / max(1, ch_crop))
-    cw = int(cw_crop * scale) // 2 * 2
-    ch = int(ch_crop * scale) // 2 * 2
-    cam_x = max(0, (cw - W) // 2) // 2 * 2
-    cam_y = max(0, (ch - target_cam_h) // 2) // 2 * 2
+    cw = max(W, int(round(cw_crop * scale)) // 2 * 2)
+    ch = max(target_cam_h, int(round(ch_crop * scale)) // 2 * 2)
+    if cw < W:
+        cw = W
+    if ch < target_cam_h:
+        ch = target_cam_h
+    cam_x = max(0, min(cw - W, (cw - W) // 2)) // 2 * 2
+    cam_y = max(0, min(ch - target_cam_h, (ch - target_cam_h) // 2)) // 2 * 2
     cam_crop = f"crop={cw_crop}:{ch_crop}:{cx_crop}:{cy_crop},scale={cw}:{ch}:flags=lanczos,crop={W}:{target_cam_h}:{cam_x}:{cam_y}"
 
     # Gameplay crop

@@ -293,7 +293,7 @@ def _zernio_accounts(key: str) -> list:
     if cache_file.exists():
         try:
             c = json.loads(cache_file.read_text(encoding="utf-8"))
-            if c.get("key_hash") == khash and time.time() - c.get("_at", 0) < 300:
+            if c.get("key_hash") == khash and time.time() - c.get("_at", 0) < 60:
                 data = c
         except Exception:
             data = None
@@ -317,13 +317,23 @@ def _zernio_accounts(key: str) -> list:
             name = a.get("displayName") or a.get("username") or a.get("_id")
             if plat == "instagram" and not name.startswith("@") and a.get("username"):
                 name = "@" + a["username"]
+            rate_limit_ts = 0.0
+            rl_str = a.get("rateLimitedUntil")
+            if rl_str:
+                try:
+                    import datetime
+                    dt = datetime.datetime.fromisoformat(str(rl_str).replace("Z", "+00:00"))
+                    rate_limit_ts = dt.timestamp()
+                except Exception:
+                    pass
             out.append({
                 "id": acc_id,
                 "platform": plat,
                 "name": name,
                 "zernio_account_id": a["_id"],
                 "added": time.time(),
-                "detail": f"Zernio ({PLATFORM_NAMES.get(plat, plat)})"
+                "detail": f"Zernio ({PLATFORM_NAMES.get(plat, plat)})",
+                "rate_limited_until": rate_limit_ts
             })
     return out
 

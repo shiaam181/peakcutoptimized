@@ -10,7 +10,7 @@ import time
 
 from . import config
 
-BUSY_CPU = float(config.env("PEAKCUT_BUSY_CPU", "82"))          # percent: above this, no extra videos are started
+BUSY_CPU = float(config.env("PEAKCUT_BUSY_CPU", "92"))          # percent: above this, no extra videos are started
 MIN_FREE_RAM_GB = float(config.env("PEAKCUT_MIN_FREE_RAM_GB", "1.5"))
 MIN_FREE_DISK_GB = float(config.env("PEAKCUT_MIN_FREE_DISK_GB", "3"))
 

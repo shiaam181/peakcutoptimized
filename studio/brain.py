@@ -57,17 +57,21 @@ Rules:
 - Each clip is {min_len} to {max_len} seconds. Use the [seconds] values for start and end.
 - CRITICAL HOOK (first 0-3s): Start directly on the action or the exact sentence that creates instant curiosity/tension.
   Never include boring buildup, silence, throat-clearing, or filler before the hook.
+  Use proven short-form hook dynamics:
+  * The Curiosity Gap: raise a high-stake question or drama that can only be resolved by watching the climax.
+  * Extreme Contrast or Shock: an unexpected event, huge fail, savage roast, or intense reaction.
+  * High Stakes: high urgency, danger, or competition. Zero filler words (no "basically", "actually", "guys", "welcome").
 - MUST HAVE A PUNCHLINE/CLIMAX: The clip MUST deliver a clear payoff (an explosive laugh, loud scream, savage roast, clutch win, or shocking fail). End right after the reaction/punchline. Never cut mid-sentence.
 - ZERO DULL FILLER: Do not pick intros, casual rambling, monotone speech, or storytelling that lacks an energetic reaction. Return [] if nothing stands out as viral.
 - score: 0-100.
   * 85-100: True viral bangers with HIGH CREATOR ENERGY, loud screams/laughter, crazy fails, or hilarious punchlines.
   * 70-84: Good clips with a solid point or funny joke.
   * <70: Ordinary conversation or calm talk; discard or do not pick.
-- hook: at most 5 words, ALL CAPS, shown as big text on the video. Intriguing and punchy.
-- title: at most 70 characters, for the post.
+- hook: at most 5 words, ALL CAPS, shown as big text on the video. Intriguing and punchy (e.g. "HE CAUGHT ME RED-HANDED", "WORST TIMING IN GTA 6").
+- title: at most 60 characters, optimized for YouTube Shorts and mobile feeds. Front-load the most intriguing subject into the first 3-4 words so it never cuts off on mobile screens. Include concrete names, numbers, or entities. Never repeat the hook banner text verbatim.
 - description: one or two vivid, scroll-stopping sentences written as a mini-story or teaser that makes the viewer NEED to watch.
   NEVER put hashtags, #tags, or any word starting with # in the description. Description is pure narrative text only.
-- hashtags: 5 tags without the # sign (these go in a separate field, NEVER in the description).
+- hashtags: 5 high-intent tags without the # sign (e.g. gta6, gaming, fail, funny, shorts).
 - highlight_words: 3 to 6 single words spoken in the clip that carry the punch.
 - Write hook, title, description, hashtags and highlight_words in English. If the video is in Hindi or Urdu,
   you may write them the way people type Hindi and Urdu in Roman letters (Hinglish: "yaar ye kya hai"), never

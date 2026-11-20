@@ -135,6 +135,14 @@ def create(data: dict) -> dict:
     c = _fix({**DEFAULTS, **_clean(data)})
     if not c["name"]:
         raise ValueError("Give the creator a name.")
+    if not c.get("accounts"):
+        try:
+            from . import accounts
+            c["accounts"] = [a["id"] for a in accounts.list_accounts()]
+        except Exception:
+            c["accounts"] = []
+    if c.get("channel") and "auto_watch" not in data:
+        c["auto_watch"] = True
     slug = re.sub(r"[^a-z0-9]+", "-", c["name"].lower()).strip("-")[:40] or "creator"
     cid, n = slug, 2
     while root(cid).exists():

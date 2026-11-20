@@ -1,10 +1,10 @@
 """Post queue: decides when each finished clip goes to which account, posts it, and tracks views."""
+import json
+import re
 import secrets
 import threading
 import time
 from pathlib import Path
-
-import json
 
 from . import accounts, alerts, config, creators, ctx, jobs, live
 
@@ -92,11 +92,19 @@ def enqueue(job, clip, account_ids, now=False) -> list:
 def on_clip_ready(job, clip):
     """Called once when a clip first finishes rendering."""
     c = creators.get(job["creator"])
-    if not c or not c["autopost"] or not c["accounts"]:
+    if not c or not c.get("autopost"):
         return
-    if clip.get("score", 0) < c["post_min_score"]:
+    accs = c.get("accounts")
+    if not accs:
+        try:
+            accs = [a["id"] for a in accounts.list_accounts()]
+        except Exception:
+            accs = []
+    if not accs:
+        return
+    if clip.get("score", 0) < c.get("post_min_score", 85):
         return  # includes hand-made clips (score 0): those wait for you to press Post
-    made = enqueue(job, clip, c["accounts"])
+    made = enqueue(job, clip, accs, now=True)
     if made:
         creators.log(c["id"], f"Queued for {len(made)} account(s): {clip.get('title') or clip.get('hook')}")
 
@@ -160,11 +168,20 @@ def _post(p):
         p.update(status="posted", posted_at=time.time(), remote_id=rid, url=url, error=None)
         creators.log(p["creator"], f"Posted to {acc['name']}: {title}")
     except Exception as e:  # noqa: BLE001
-        p["tries"] += 1
-        p["error"] = str(e)[-300:]
-        if p["tries"] < 3 and clip and acc:
+        err_str = str(e)
+        if "Too many failed posts detected" in err_str or "rateLimitedUntil" in err_str or "429" in err_str:
+            p.update(status="scheduled", due_at=time.time() + 1800, tries=0, error="Waiting for provider cooldown")
+            try:
+                (accounts._dir() / "zernio_accounts.json").unlink(missing_ok=True)
+            except Exception:
+                pass
+        elif p["tries"] < 2 and clip and acc:
+            p["tries"] += 1
+            p["error"] = err_str[-300:]
             p.update(status="scheduled", due_at=time.time() + 600)  # try again in 10 minutes
         else:
+            p["tries"] += 1
+            p["error"] = err_str[-300:]
             p["status"] = "failed"
             creators.log(p["creator"], f"Post failed on {p['account_name']}: {p['error']}")
             alerts.notify(f"post failed on {p['account_name']} ({p['title']}): {p['error'][:200]}", kind="post")
@@ -180,6 +197,9 @@ def _run():
             try:
                 with ctx.as_user(p["user"]):
                     if accounts.settings()["paused"]:
+                        continue
+                    acc = accounts.get(p["account"])
+                    if acc and acc.get("rate_limited_until", 0) > time.time():
                         continue
                     with _lock:
                         if p["status"] != "scheduled":
