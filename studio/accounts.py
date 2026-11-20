@@ -271,8 +271,138 @@ def public_settings() -> dict:
 
 
 # ------------------------------------------------------------------ accounts
+def _user_zernio_key() -> str:
+    saved = _read("zernio.json", {})
+    key = saved.get("key")
+    if not key:
+        try:
+            u = ctx.uid()
+        except Exception:
+            u = "u_local"
+        if u == "u_local" or not config.ACCOUNTS:
+            key = config.env("ZERNIO_API_KEY")
+    return (key or "").strip()
+
+
+def _zernio_accounts(key: str) -> list:
+    if not key:
+        return []
+    cache_file = _dir() / "zernio_accounts.json"
+    khash = hashlib.sha256(key.encode()).hexdigest()[:12]
+    data = None
+    if cache_file.exists():
+        try:
+            c = json.loads(cache_file.read_text(encoding="utf-8"))
+            if c.get("key_hash") == khash and time.time() - c.get("_at", 0) < 300:
+                data = c
+        except Exception:
+            data = None
+    if not data or not data.get("accounts"):
+        try:
+            r = httpx.get("https://zernio.com/api/v1/accounts", headers={"Authorization": f"Bearer {key}"}, timeout=8.0)
+            if r.status_code == 200:
+                data = r.json()
+                data["key_hash"] = khash
+                data["_at"] = time.time()
+                cache_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+    out = []
+    if data and isinstance(data.get("accounts"), list):
+        for a in data["accounts"]:
+            plat = a.get("platform")
+            if plat not in PLATFORM_NAMES:
+                continue
+            acc_id = f"zrn_{a['_id']}"
+            name = a.get("displayName") or a.get("username") or a.get("_id")
+            if plat == "instagram" and not name.startswith("@") and a.get("username"):
+                name = "@" + a["username"]
+            out.append({
+                "id": acc_id,
+                "platform": plat,
+                "name": name,
+                "zernio_account_id": a["_id"],
+                "added": time.time(),
+                "detail": f"Zernio ({PLATFORM_NAMES.get(plat, plat)})"
+            })
+    return out
+
+
 def _all() -> list:
-    return [a for a in _read("accounts.json", []) if a.get("platform") in PLATFORM_NAMES]
+    disabled = set(_read("disabled_accounts.json", []))
+    accs = [a for a in _read("accounts.json", []) if a.get("platform") in PLATFORM_NAMES and a.get("id") not in disabled]
+    user_z_key = _user_zernio_key()
+    if user_z_key:
+        z_accs = _zernio_accounts(user_z_key)
+        for za in z_accs:
+            if za["id"] in disabled:
+                continue
+            if not any(a.get("id") == za["id"] or a.get("zernio_account_id") == za.get("zernio_account_id") for a in accs):
+                accs.append(za)
+    return accs
+
+
+def zernio_upload(acc, path: Path, title: str, caption: str, scheduled_for: float = None, job_id: str = None):
+    """Uploads a video to Zernio and creates a post for Instagram Reel or YouTube Short."""
+    key = _user_zernio_key()
+    if not key:
+        raise RuntimeError("Zernio API key is not connected for this user.")
+
+    media_url = None
+    if not job_id:
+        try:
+            job_id = path.parent.parent.name
+        except Exception:
+            job_id = None
+
+    # Prefer public clip link to avoid Vercel/serverless 4.5 MB payload limit (HTTP 413)
+    if config.PUBLIC_URL and job_id:
+        try:
+            media_url = clip_link(job_id, path.name, seconds=86400)
+        except Exception:
+            media_url = None
+
+    if not media_url:
+        with path.open("rb") as f:
+            files = {"files": (path.name, f, "video/mp4")}
+            r = _check(httpx.post("https://zernio.com/api/v1/media", headers={"Authorization": f"Bearer {key}"}, files=files, timeout=300),
+                       "Uploading video to Zernio")
+        media_data = r.json()
+        files_list = media_data.get("files") or []
+        if not files_list or not files_list[0].get("url"):
+            raise RuntimeError(f"Zernio media response missing URL: {media_data}")
+        media_url = files_list[0]["url"]
+
+    target_id = acc.get("zernio_account_id")
+    if not target_id:
+        for za in _zernio_accounts(key):
+            if za.get("platform") == acc["platform"]:
+                target_id = za.get("zernio_account_id")
+                break
+    if not target_id:
+        raise RuntimeError(f"No Zernio account found for platform {acc['platform']}.")
+
+    post_body = {
+        "title": title[:100],
+        "content": caption[:2000],
+        "platforms": [
+            {"platform": acc["platform"], "accountId": target_id}
+        ],
+        "mediaItems": [
+            {"type": "video", "url": media_url}
+        ],
+        "publishNow": True if not scheduled_for or scheduled_for <= time.time() + 60 else False
+    }
+    if not post_body["publishNow"] and scheduled_for:
+        post_body["scheduledFor"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(scheduled_for))
+
+    pr = _check(httpx.post("https://zernio.com/api/v1/posts", headers={"Authorization": f"Bearer {key}"}, json=post_body, timeout=60),
+                "Scheduling post on Zernio")
+    pdata = pr.json()
+    post_obj = pdata.get("post") or pdata
+    remote_id = str(post_obj.get("_id") or "")
+    url = f"https://zernio.com/posts/{remote_id}" if remote_id else "https://zernio.com"
+    return remote_id, url
 
 
 def get(aid):
@@ -286,19 +416,72 @@ def list_accounts() -> list:
 
 def _put(acc):
     with _lock:
-        rest = [a for a in _all() if a["id"] != acc["id"]]
+        rest = [a for a in _read("accounts.json", []) if a["id"] != acc["id"]]
         _write("accounts.json", rest + [acc])
 
 
 def remove(aid):
     with _lock:
-        _write("accounts.json", [a for a in _all() if a["id"] != aid])
+        if aid.startswith("zrn_"):
+            dis = _read("disabled_accounts.json", [])
+            if aid not in dis:
+                dis.append(aid)
+                _write("disabled_accounts.json", dis)
+            return
+        _write("accounts.json", [a for a in _read("accounts.json", []) if a["id"] != aid])
 
 
 def _check(r, what):
     if r.status_code >= 400:
         raise RuntimeError(f"{what} failed ({r.status_code}): {r.text[:300]}")
     return r
+
+
+def zernio_status() -> dict:
+    key = _user_zernio_key()
+    if not key:
+        return {"has_key": False, "key_hint": "", "accounts": []}
+    accs = _zernio_accounts(key)
+    return {"has_key": True, "key_hint": key[-4:] if len(key) >= 8 else "", "accounts": accs}
+
+
+def zernio_save(key: str) -> dict:
+    key = str(key or "").strip()
+    if not key:
+        return zernio_clear()
+    r = httpx.get("https://zernio.com/api/v1/accounts", headers={"Authorization": f"Bearer {key}"}, timeout=10.0)
+    if r.status_code >= 400:
+        raise ValueError(f"Invalid Zernio key ({r.status_code}): check that your key starts with sk_ and is active.")
+    khash = hashlib.sha256(key.encode()).hexdigest()[:12]
+    try:
+        data = r.json()
+        data["key_hash"] = khash
+        data["_at"] = time.time()
+        (_dir() / "zernio_accounts.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+    _write("zernio.json", {"key": key, "updated": time.time()})
+    dis_f = _dir() / "disabled_accounts.json"
+    if dis_f.exists():
+        try:
+            dis_f.unlink()
+        except OSError:
+            pass
+    ctx.bump()
+    return zernio_status()
+
+
+def zernio_clear() -> dict:
+    with _lock:
+        for fname in ("zernio.json", "zernio_accounts.json", "disabled_accounts.json"):
+            f = _dir() / fname
+            if f.exists():
+                try:
+                    f.unlink()
+                except OSError:
+                    pass
+    ctx.bump()
+    return {"has_key": False, "key_hint": "", "accounts": []}
 
 
 # ------------------------------------------------------------------ YouTube

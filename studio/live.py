@@ -103,6 +103,7 @@ class Session:
         self.end_note = "Stream ended"
         self.user_stopped = False     # Stop pressed: wrap up at once, no last AI check
         self.proc = None
+        self.ydl_proc = None
         self.pending = bytearray()    # audio received but not yet transcribed
         self.clock_fix = 0.0          # how far the video-piece clock is behind the audio clock, last measured
         self.pending_base = 0         # sample index where `pending` starts
@@ -156,6 +157,11 @@ class Session:
         jobs.save(self.job)
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
+        if self.ydl_proc and self.ydl_proc.poll() is None:
+            try:
+                self.ydl_proc.terminate()
+            except Exception:
+                pass
 
     def _ingest(self):
         fails = 0
@@ -177,18 +183,35 @@ class Session:
             with self.lock:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
-            cmd = ["ffmpeg", "-v", "error", "-reconnect", "1", "-reconnect_streamed", "1",
-                   "-reconnect_delay_max", "10"]
-            for u in info["urls"]:
-                cmd += ["-i", u]
-            a_in = "1:a:0" if len(info["urls"]) > 1 else "0:a:0"
-            cmd += ["-map", "0:v:0", "-map", a_in, "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
-                    "-reset_timestamps", "1", "-segment_format", "mpegts", "-segment_list", f"{p}.csv",
-                    "-segment_list_type", "csv", f"{p}_%05d.ts",
-                    "-map", a_in, "-vn", "-ac", "1", "-ar", str(SR), "-f", "s16le", "pipe:1"]
+
+            multi = len(info["urls"]) > 1
+            if multi:
+                # YouTube streams deliver video and audio in separate HLS playlists with different playlist heads.
+                # Direct ffmpeg with separate -i inputs loses sync (-c copy does not align multi-source HLS timestamps).
+                # Piping yt-dlp to ffmpeg aligns the HLS manifests by EXT-X-PROGRAM-DATE-TIME into a single synchronized stream.
+                cmd_ydl = ["yt-dlp", "-q", "--no-warnings", "-f", "b[height<=720]/bv*[height<=720]+ba/b", "-o", "-", url]
+                self.ydl_proc = subprocess.Popen(cmd_ydl, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                                 creationflags=media.NO_WINDOW)
+                cmd = ["ffmpeg", "-v", "error", "-i", "pipe:0",
+                       "-map", "0:v:0", "-map", "0:a:0", "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
+                       "-reset_timestamps", "1", "-segment_format", "mpegts", "-segment_list", f"{p}.csv",
+                       "-segment_list_type", "csv", f"{p}_%05d.ts",
+                       "-map", "0:a:0", "-vn", "-ac", "1", "-ar", str(SR), "-f", "s16le", "pipe:1"]
+                stdin_stream = self.ydl_proc.stdout
+            else:
+                cmd = ["ffmpeg", "-v", "error", "-reconnect", "1", "-reconnect_streamed", "1",
+                       "-reconnect_delay_max", "10", "-i", info["urls"][0],
+                       "-map", "0:v:0", "-map", "0:a:0", "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
+                       "-reset_timestamps", "1", "-segment_format", "mpegts", "-segment_list", f"{p}.csv",
+                       "-segment_list_type", "csv", f"{p}_%05d.ts",
+                       "-map", "0:a:0", "-vn", "-ac", "1", "-ar", str(SR), "-f", "s16le", "pipe:1"]
+                stdin_stream = None
+
             with open(self.dir / "ffmpeg.log", "ab") as errlog:
-                self.proc = subprocess.Popen(cmd, cwd=self.buf, stdout=subprocess.PIPE, stderr=errlog,
+                self.proc = subprocess.Popen(cmd, cwd=self.buf, stdin=stdin_stream, stdout=subprocess.PIPE, stderr=errlog,
                                              creationflags=media.NO_WINDOW)
+                if multi and self.ydl_proc and self.ydl_proc.stdout:
+                    self.ydl_proc.stdout.close()
                 got = 0
                 while True:
                     data = self.proc.stdout.read(SR * 2)  # one second of 16-bit mono
@@ -203,6 +226,13 @@ class Session:
                         self.samples += len(data) // 2
                         self.db.append(level)
                 self.proc.wait()
+                if multi and self.ydl_proc:
+                    try:
+                        self.ydl_proc.terminate()
+                        self.ydl_proc.wait(timeout=2)
+                    except Exception:
+                        self.ydl_proc.kill()
+                    self.ydl_proc = None
             fails = 0 if got > SR * 2 * 20 else fails + 1
             if fails >= 3:
                 break
@@ -379,7 +409,7 @@ class Session:
             self.job["ai"]["last_error"] = str(e)[-200:]
         added = 0
         for c in keep:
-            match = [m for m in sig if m["end"] >= c["start"] - 10 and m["start"] <= c["end"] + 10 and m["score"] >= 50]
+            match = [m for m in sig if m["end"] >= c["start"] - 10 and m["start"] <= c["end"] + 10 and m["score"] >= 65]
             rs = max((m["score"] for m in match), default=0)
             verdict["reaction"] = rs
             both = bool(match)
@@ -391,9 +421,22 @@ class Session:
             if any(abs(c["start"] - k["start"]) < st["min_gap_min"] * 60 for k in self.job["clips"]):
                 self._verdict(verdict, "Too close to the last clip")
                 continue
-            why = "Both judges agreed" if both else ("Words judge was very sure" if c["score"] >= 90 and
+
+            raw_words = c["score"]
+            # Weight 65% on the creator's reaction: people watch for energy, screams, laughter and freakouts!
+            if both and rs:
+                c["score"] = int(round(0.35 * raw_words + 0.65 * rs))
+            elif not both:
+                c["score"] = min(c["score"], 72)
+
+            if c["score"] < (40 if must else st["min_score"]):
+                self.rejected += 1
+                self._verdict(verdict, f"Composite score ({c['score']}) below threshold ({st['min_score']})")
+                continue
+
+            why = "Both judges agreed" if both else ("Words judge was very sure" if raw_words >= 90 and
                                                      st["decide_mode"] == "either" else "Forced: no clip for a while")
-            c["judges"] = {"words": c["score"], "reaction": rs or None, "why": why}
+            c["judges"] = {"words": raw_words, "reaction": rs or None, "why": why}
             c["reason"] = f"{c['reason']} ({why.lower()}.)"
             self._add_clip(c)
             self._verdict(verdict, "Clipped: " + why.lower())

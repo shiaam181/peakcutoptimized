@@ -46,11 +46,12 @@ def _next_slot(account_id, gap_min, cap):
     """Earliest time that respects the gap between posts and the daily cap for this account."""
     mine = [p for p in _mine() if p["account"] == account_id and p["status"] in OPEN + ("posted",)]
     t = max(time.time(), max((p.get("posted_at") or p["due_at"] for p in mine), default=0) + gap_min * 60)
-    for _ in range(30):
-        if sum(1 for p in mine if _day(p.get("posted_at") or p["due_at"]) == _day(t)) < cap:
-            break
-        lt = time.localtime(t + 86400)
-        t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 9, 0, 0, 0, 0, -1))  # 9:00 next day
+    if cap and cap < 9000:
+        for _ in range(30):
+            if sum(1 for p in mine if _day(p.get("posted_at") or p["due_at"]) == _day(t)) < cap:
+                break
+            lt = time.localtime(t + 86400)
+            t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 9, 0, 0, 0, 0, -1))  # 9:00 next day
     return t
 
 
@@ -90,9 +91,32 @@ def on_clip_ready(job, clip):
         creators.log(c["id"], f"Queued for {len(made)} account(s): {clip.get('title') or clip.get('hook')}")
 
 
-def _caption(clip, creator):
-    tags = " ".join("#" + h for h in clip.get("hashtags", []))
-    return "\n\n".join(x for x in (clip.get("description", ""), tags, creator.get("post_footer", "")) if x)
+def _caption(clip, creator, platform=""):
+    desc = re.sub(r'#\S+', '', (clip.get("description") or "")).strip()
+    desc = re.sub(r'\s{2,}', ' ', desc).strip()
+    footer = (creator.get("post_footer") or "").strip()
+    # YouTube Shorts algorithm strongly prefers clean descriptions without hashtag stuffing.
+    # Official YouTube guidance: tags belong in metadata tags parameter; spamming hashtags in description suppresses reach.
+    if platform == "youtube":
+        return "\n\n".join(x for x in (desc, footer) if x)
+
+    raw_tags = [str(h).lstrip("#").strip() for h in clip.get("hashtags", []) if str(h).strip()]
+    plat_tags = []
+    if platform == "instagram":
+        plat_tags = ["reels", "trending"]
+    elif platform == "tiktok":
+        plat_tags = ["fyp", "trending"]
+
+    seen = set()
+    combined_tags = []
+    for t in raw_tags + plat_tags:
+        low = t.lower()
+        if low not in seen:
+            seen.add(low)
+            combined_tags.append(t)
+
+    tags_str = " ".join("#" + t for t in combined_tags[:8])
+    return "\n\n".join(x for x in (desc, tags_str, footer) if x)
 
 
 def _post(p):
@@ -106,12 +130,20 @@ def _post(p):
             raise RuntimeError("That account was disconnected.")
         path = Path(job["dir"]) / "clips" / clip["file"]
         creator = creators.get(job["creator"]) or dict(creators.DEFAULTS, name="clips")
-        title, cap = clip.get("title") or clip.get("hook") or "Clip", _caption(clip, creator)
-        if acc["platform"] == "youtube":
-            rid, url = accounts.youtube_upload(acc, path, title, cap + "\n\n#Shorts", clip.get("hashtags", []), creator["privacy"])
-        elif acc["platform"] == "instagram":
+        platform = acc.get("platform", "")
+        title = clip.get("title") or clip.get("hook") or "Clip"
+        if platform == "youtube" and "#Shorts" not in title and "#shorts" not in title:
+            title = f"{title[:88]} #Shorts".strip()
+        cap = _caption(clip, creator, platform)
+        if acc.get("zernio_account_id") or (accounts._user_zernio_key() and not acc.get("token") and not acc.get("refresh_token")):
+            if platform == "instagram":
+                cap = f"{title}\n\n{cap}".strip()
+            rid, url = accounts.zernio_upload(acc, path, title, cap, scheduled_for=p.get("due_at"), job_id=job["id"])
+        elif platform == "youtube":
+            rid, url = accounts.youtube_upload(acc, path, title, cap, clip.get("hashtags", []), creator["privacy"])
+        elif platform == "instagram":
             rid, url = accounts.instagram_upload(acc, path, f"{title}\n\n{cap}", job["id"])
-        elif acc["platform"] == "tiktok":
+        elif platform == "tiktok":
             rid, url = accounts.tiktok_upload(acc, path, f"{title}\n\n{cap}", creator["privacy"])
         else:
             raise RuntimeError("That kind of account is no longer supported.")

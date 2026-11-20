@@ -14,12 +14,12 @@ def _root() -> Path:
 
 _lock = threading.RLock()
 
-DEFAULTS = {"name": "", "channel": "", "style": "bounce", "layout": "blur", "min_len": 30, "max_len": 50,
+DEFAULTS = {"name": "", "channel": "", "style": "bounce", "layout": "auto", "min_len": 30, "max_len": 50,
             "max_clips": 10, "min_score": 80, "auto_watch": False, "buffer_min": 20, "live_per_hour": 4, "ai_every_min": 3, "ai_only_on_spike": True, "auto_jump_pct": 60,
             "auto_clip_uploads": True, "auto_clip_count": 10, "min_upload_duration": 300, "seen_upload_ids": [],
             "plan": "free", "decide_mode": "both", "must_clip_min": 0, "min_gap_min": 2,
             "trigger_words": "clip that, clip it",
-            "autopost": False, "accounts": [], "post_min_score": 75, "post_gap_min": 45, "daily_cap": 6,
+            "autopost": True, "accounts": [], "post_min_score": 85, "post_gap_min": 45, "daily_cap": 9999,
             "privacy": "public", "post_footer": "", "rate_per_1k": 0.0, "channels": {}, "channel_id": ""}
 PLATFORMS = ("youtube", "twitch", "kick")
 
@@ -42,7 +42,7 @@ def _fix(c: dict) -> dict:
         c["channel"] = next((ch[k] for k in PLATFORMS if k in ch), "")
     return c
 NUMERIC = {"min_len": (5, 120), "max_len": (10, 180), "max_clips": (1, 20), "min_score": (0, 100), "buffer_min": (5, 120), "live_per_hour": (1, 60), "ai_every_min": (1, 30), "auto_jump_pct": (20, 300), "must_clip_min": (0, 240), "min_gap_min": (0, 60),
-           "post_min_score": (0, 100), "post_gap_min": (5, 1440), "daily_cap": (1, 50),
+           "post_min_score": (0, 100), "post_gap_min": (5, 1440), "daily_cap": (1, 99999),
            "auto_clip_count": (1, 30), "min_upload_duration": (60, 7200)}
 
 

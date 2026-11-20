@@ -79,8 +79,9 @@ def install_fonts():
 
 
 LAYOUTS = {
-    "auto": "Auto-detect (Facecam / Podcast Split / Blur)",
-    "facecam": "Facecam (gameplay top, cam bottom)",
+    "auto": "Auto-detect (Reaction Top / Split / Blur)",
+    "facecam": "Reaction Focus (Creator top, game bottom)",
+    "facecam_game_top": "Game Focus (Gameplay top, creator bottom)",
     "split": "Split screen (podcast multicam)",
     "blur": "Full frame + blurred fill",
     "crop": "Fill the screen (centre crop)",
@@ -124,6 +125,8 @@ def geometry(src_w, src_h, layout):
     elif layout == "zoom":
         fg_h = 1000
     elif layout == "facecam":
+        return layout, H, 150, 970
+    elif layout == "facecam_game_top":
         return layout, H, 180, 1165
     elif layout == "split":
         return layout, H, 180, 970
@@ -240,8 +243,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 def _filter(layout, fg_h):
     if layout == "crop":
-        return f"[0:v]fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1[v0];"
-    return (f"[0:v]fps={config.OUT_FPS},split=2[a][b];"
+        return f"[0:v]setpts=PTS-STARTPTS,fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1[v0];"
+    return (f"[0:v]setpts=PTS-STARTPTS,fps={config.OUT_FPS},split=2[a][b];"
             f"[a]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=6:2,"
             f"scale={W}:{H},eq=brightness=-0.14:saturation=1.15[bg];"
             f"[b]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}[fg];"
@@ -254,7 +257,16 @@ RENDER_SECONDS = 600      # one clip's video encode; far beyond normal, so a fro
 
 def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, src_w: int, src_h: int) -> dict:
     """Writes <name>.mp4, <name>.jpg and <name>.ass into out_dir. Returns file names."""
+    src = Path(src).resolve()
+    out_dir = Path(out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        from . import media
+        info = media.probe(src)
+        src_w = info.get("width") or src_w
+        src_h = info.get("height") or src_h
+    except Exception:
+        pass
     start, end = clip["start"], clip["end"]
     req_layout = clip.get("layout", "auto")
     dur = max(1.0, end - start)
@@ -263,14 +275,15 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     applied_layout = req_layout
 
     # Facecam and Podcast Split Detection (ClipKaro multicam & facecam engine)
-    if req_layout in ("facecam", "split", "auto") and src_w > src_h:
+    if req_layout in ("facecam", "facecam_game_top", "split", "auto") and src_w > src_h:
         try:
             from . import director
-            if req_layout in ("facecam", "auto"):
+            if req_layout in ("facecam", "facecam_game_top", "auto"):
                 cam = director.detect_facecam(src, dur, src_w, src_h)
                 if cam:
-                    custom_filter, cap_y, hook_y = director.build_facecam_filter(cam, src_w, src_h, config.OUT_FPS)
-                    applied_layout = "facecam"
+                    reaction_top = (req_layout != "facecam_game_top")
+                    custom_filter, cap_y, hook_y = director.build_facecam_filter(cam, src_w, src_h, config.OUT_FPS, reaction_top=reaction_top)
+                    applied_layout = "facecam" if reaction_top else "facecam_game_top"
 
             if not custom_filter and req_layout in ("split", "auto"):
                 pod = director.detect_podcast_faces(src, start, dur, src_w, src_h)
@@ -288,32 +301,53 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
 
     ass = build_ass(words, start, end, clip.get("hook", ""), clip.get("style", "bounce"),
                     clip.get("highlight_words", []), hook_y, cap_y)
+    v_shift = float(clip.get("v_shift", 0.0))
     # The clip is made in a short work folder and moved into place afterwards. The caption step of ffmpeg cannot
     # open files whose full path is longer than 260 characters on Windows, which a data folder deep inside other
     # folders easily reaches. Inside the work folder every name is short and relative (a drive colon would also
     # break the filter syntax).
     work = Path(tempfile.mkdtemp(prefix="pk"))
     try:
-        return _render_in(work, src, out_dir, name, start, end, applied_layout, fg_h, ass, custom_filter=custom_filter)
+        return _render_in(work, src, out_dir, name, start, end, applied_layout, fg_h, ass, custom_filter=custom_filter, v_shift=v_shift)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
 
-def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, custom_filter: str = None) -> dict:
+def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, custom_filter: str = None, v_shift: float = 0.0) -> dict:
     global _qsv_ok
     (work / f"{name}.ass").write_text(ass, encoding="utf-8")
     (work / "f").mkdir()
     for f in config.FONTS_DIR.glob("*.ttf"):
         shutil.copyfile(f, work / "f" / f.name)
     v_filter = custom_filter if custom_filter else _filter(layout, fg_h)
+    v_start = max(0.0, start + v_shift)
+    v_end = max(v_start + 1.0, end + v_shift)
+    earliest = min(start, v_start)
+    fast_seek = max(0.0, earliest - 10.0) if earliest > 15.0 else 0.0
+    rel_start = start - fast_seek
+    rel_end = end - fast_seek
+    v_rel_start = v_start - fast_seek
+    v_rel_end = v_end - fast_seek
+
+    trim_v = f"[0:v]trim=start={v_rel_start:.2f}:end={v_rel_end:.2f},setpts=PTS-STARTPTS"
+    if "[0:v]setpts=PTS-STARTPTS" in v_filter:
+        v_filter = v_filter.replace("[0:v]setpts=PTS-STARTPTS", trim_v)
+    else:
+        v_filter = trim_v + "[v_raw];" + v_filter.replace("[0:v]", "[v_raw]")
     fc = v_filter + f"[v0]ass={name}.ass:fontsdir=f[v]"
-    base = ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.2f}", "-t", f"{end - start:.2f}", "-i", str(src),
-            "-filter_complex", fc, "-map", "[v]", "-map", "0:a:0", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",
+    af = f"atrim=start={rel_start:.2f}:end={rel_end:.2f},asetpts=PTS-STARTPTS,aresample=async=1:first_pts=0,loudnorm=I=-14:TP=-1.5:LRA=11"
+    base = ["ffmpeg", "-y", "-v", "error"]
+    if fast_seek > 0:
+        base += ["-ss", f"{fast_seek:.2f}"]
+    base += ["-i", str(src),
+            "-filter_complex", fc, "-map", "[v]", "-map", "0:a:0",
+            "-af", af,
+            "-avoid_negative_ts", "make_zero",
             "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", "-pix_fmt"]
     encoders = []
     if _qsv_ok is not False:
         encoders.append(("qsv", ["nv12", "-c:v", "h264_qsv", "-global_quality", "23", "-preset", "fast"]))
-    encoders.append(("x264", ["yuv420p", "-c:v", "libx264", "-crf", "21", "-preset", "veryfast"]))
+    encoders.append(("x264", ["yuv420p", "-c:v", "libx264", "-crf", "21", "-preset", "veryfast", "-threads", "4"]))
     err = None
     for label, enc in encoders:
         p = subprocess.run(base + enc + [f"{name}.mp4"], cwd=work, capture_output=True, text=True,

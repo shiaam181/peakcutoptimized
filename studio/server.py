@@ -1050,7 +1050,7 @@ def media_file(jid: str, name: str, download: int = 0):
     f = Path(_job_or_404(jid)["dir"]) / "clips" / name
     if not f.is_file():
         raise HTTPException(404)
-    return FileResponse(f, filename=name if download else None, headers={"Cache-Control": "private, max-age=300"})
+    return FileResponse(f, filename=name if download else None, headers={"Cache-Control": "no-cache, must-revalidate"})
 
 
 # ================================================================ creators and live recording
@@ -1390,6 +1390,28 @@ def list_accounts():
 def remove_account(aid: str):
     accounts.remove(aid)
     return {"ok": True}
+
+
+@app.get("/api/zernio")
+def zernio_get(request: Request):
+    _me(request)
+    return accounts.zernio_status()
+
+
+@app.put("/api/zernio")
+def zernio_put(request: Request, body: dict = Body(default={})):
+    _me(request)
+    k = str(body.get("key") or "").strip()
+    try:
+        return accounts.zernio_save(k)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/zernio")
+def zernio_delete(request: Request):
+    _me(request)
+    return accounts.zernio_clear()
 
 
 # ---------------------------------------------------------------- connecting YouTube, Instagram and TikTok

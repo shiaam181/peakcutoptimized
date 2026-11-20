@@ -127,17 +127,59 @@ def info(url: str) -> dict:
 
 def youtube_words(url: str):
     """YouTube's own transcript of a video, word by word: ([{'w', 's', 'e'}, ...], language), or None if the video
-    has none. Only the transcript in the language that was spoken is used, never a translation."""
+    has none. Prefers the spoken language (or manual subtitles) over foreign dubs."""
     if not is_youtube(url):
         return None
     import json
     with _youtube_guard(url), _ydl({}) as ydl:
         i = ydl.extract_info(url, download=False)
+        subs = i.get("subtitles") or {}
         auto = i.get("automatic_captions") or {}
-        key = next((k for k in auto if k.endswith("-orig")), None)
-        if not key and i.get("language") in auto:
-            key = i["language"]
-        track = next((f for f in auto.get(key) or [] if f.get("ext") == "json3" and f.get("url")), None) if key else None
+        title = i.get("title") or ""
+        vlang = (i.get("language") or "").split("-")[0].lower()
+
+        has_devanagari = any(0x0900 <= ord(c) <= 0x097F for c in title)
+        pref_langs = ["hi", "hi-Latn", "en"] if has_devanagari else ([vlang, "en", "hi"] if vlang else ["en", "hi"])
+
+        key = None
+        source_dict = None
+
+        # 1. Manual human subtitles first
+        for pl in pref_langs:
+            for k in (f"{pl}-orig", pl, f"{pl}-Latn", f"{pl}-IN", f"{pl}-US"):
+                if k in subs and any(f.get("ext") == "json3" and f.get("url") for f in subs[k]):
+                    key, source_dict = k, subs
+                    break
+            if key:
+                break
+
+        # 2. Automatic captions matching preferred language
+        if not key:
+            for pl in pref_langs:
+                for k in (f"{pl}-orig", pl, f"{pl}-Latn", f"{pl}-IN", f"{pl}-US"):
+                    if k in auto and any(f.get("ext") == "json3" and f.get("url") for f in auto[k]):
+                        key, source_dict = k, auto
+                        break
+                if key:
+                    break
+
+        # 3. Standard fallback: en or hi
+        if not key:
+            for candidate in ("en-orig", "hi-orig", "en", "hi"):
+                if candidate in auto and any(f.get("ext") == "json3" and f.get("url") for f in auto[candidate]):
+                    key, source_dict = candidate, auto
+                    break
+
+        # 4. Any original track if single
+        if not key:
+            origs = [k for k in auto if k.endswith("-orig") and any(f.get("ext") == "json3" and f.get("url") for f in auto[k])]
+            if len(origs) == 1:
+                key, source_dict = origs[0], auto
+
+        if not key or not source_dict:
+            return None
+
+        track = next((f for f in source_dict.get(key) or [] if f.get("ext") == "json3" and f.get("url")), None)
         if not track:
             return None
         raw = ydl.urlopen(track["url"]).read(40_000_000)

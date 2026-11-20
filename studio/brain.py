@@ -31,7 +31,7 @@ SCHEMA = {
     },
 }
 
-HEAD = """You are a clip scout for short-form gaming and streaming videos (YouTube Shorts, Reels, TikTok).
+HEAD = """You are an elite short-form clip scout for viral videos (YouTube Shorts, Instagram Reels, TikTok).
 Below is a timestamped transcript of part of a video. Each line starts with [seconds]. Lines marked (LOUD)
 are where the audio got much louder than usual: shouting, laughing, sudden action. Lines marked (CHAT)
 are where the live chat suddenly got much busier, which usually means viewers reacted to something.
@@ -39,28 +39,35 @@ are where the live chat suddenly got much busier, which usually means viewers re
 Video title: {title}
 Channel: {uploader}
 
-Pick up to {n} moments that would work as standalone clips for someone who has never seen the stream:
-funny moments, fails, clutch plays, rage, shock, hot takes, or a short story with a payoff.
+Pick up to {n} moments that would work as VIRAL standalone clips:
+Top priority: HIGH-ENERGY CREATOR REACTIONS, explosive laugh-out-loud moments, rage/shouting freakouts, savage roasts, shocking plot twists, epic clutch plays, or instant-regret fails.
+Viewers watch streams and gaming clips for the CREATOR'S REACTION, emotional outburst, screaming, and wild facial expressions—NOT calm gameplay, quiet conversation, or dull rambling.
+Every clip MUST capture the FULL moment: the setup, the peak crazy reaction/punchline, and the immediate aftermath.
+DO NOT pick ordinary chat or conversational filler. If the streamer is just talking casually with no reaction or excitement, return [].
 """
 
 LIVE_NOTE = """
 This is a LIVE stream and the transcript is only the last few minutes, ending at {now:.0f} seconds.
 If a moment is still unfolding at the very end, leave it out; you will see it again in the next check.
-Most checks should return []. Only return a moment you would stop scrolling for.
+Most checks should return []. Only return a high-energy moment with a crazy reaction or funny punchline that you would stop scrolling for.
 """
 
 RULES = """
 Rules:
 - Each clip is {min_len} to {max_len} seconds. Use the [seconds] values for start and end.
-- Start on the setup line, not mid-sentence. End right after the payoff or reaction, on the last word of a
-  complete sentence: never in the middle of a sentence or a thought. The clip must make sense on its own.
-- Do not pick intros, sponsor reads, "like and subscribe", or dead air.
-- Skip weak moments. Fewer strong clips beat many weak ones. Return [] if nothing is worth clipping.
-- score: 0-100, how likely a stranger keeps watching. Be honest; most clips are 50-80.
-- hook: at most 5 words, ALL CAPS, shown as big text on the video. Curiosity, but true to what happens.
+- CRITICAL HOOK (first 0-3s): Start directly on the action or the exact sentence that creates instant curiosity/tension.
+  Never include boring buildup, silence, throat-clearing, or filler before the hook.
+- MUST HAVE A PUNCHLINE/CLIMAX: The clip MUST deliver a clear payoff (an explosive laugh, loud scream, savage roast, clutch win, or shocking fail). End right after the reaction/punchline. Never cut mid-sentence.
+- ZERO DULL FILLER: Do not pick intros, casual rambling, monotone speech, or storytelling that lacks an energetic reaction. Return [] if nothing stands out as viral.
+- score: 0-100.
+  * 85-100: True viral bangers with HIGH CREATOR ENERGY, loud screams/laughter, crazy fails, or hilarious punchlines.
+  * 70-84: Good clips with a solid point or funny joke.
+  * <70: Ordinary conversation or calm talk; discard or do not pick.
+- hook: at most 5 words, ALL CAPS, shown as big text on the video. Intriguing and punchy.
 - title: at most 70 characters, for the post.
-- description: one or two sentences.
-- hashtags: 5 tags without the # sign.
+- description: one or two vivid, scroll-stopping sentences written as a mini-story or teaser that makes the viewer NEED to watch.
+  NEVER put hashtags, #tags, or any word starting with # in the description. Description is pure narrative text only.
+- hashtags: 5 tags without the # sign (these go in a separate field, NEVER in the description).
 - highlight_words: 3 to 6 single words spoken in the clip that carry the punch.
 - Write hook, title, description, hashtags and highlight_words in English. If the video is in Hindi or Urdu,
   you may write them the way people type Hindi and Urdu in Roman letters (Hinglish: "yaar ye kya hai"), never
@@ -120,8 +127,9 @@ def _tidy(c, s, e, req_tags="", req_hook=""):
     if req_hook and req_hook.upper() not in hook:
         hook = f"{req_hook.upper()} - {hook}"[:60].strip(" -")
     desc = roman.to_roman(_text(c.get("description"), 300))
-    if req_tags and not any(t in desc for t in req_tags.split()[:3]):
-        desc = (desc + " " + req_tags)[:300].strip()
+    # Never append hashtags or campaign tags into the description: they go in the hashtags field only
+    desc = re.sub(r'#\S+', '', desc).strip()
+    desc = re.sub(r'\s{2,}', ' ', desc).strip()
     return {
         "start": s, "end": e, "score": max(0, min(100, int(_num(c.get("score"))))),
         "category": cat if cat in CATEGORIES else "other",
@@ -239,7 +247,7 @@ def _snap(clip, lines, words, min_len, max_len, duration):
     return round(max(0.0, s - 0.15), 2), round(min(duration, e + tail), 2)
 
 
-def fallback_by_loudness(db, words, n, max_len, duration):
+def fallback_by_loudness(db, words, n, max_len, duration, title="", uploader=""):
     """No AI available: take the loudest stretches that contain speech."""
     z = loud_zscore(db)
     picks, order = [], np.argsort(-z)
@@ -248,11 +256,22 @@ def fallback_by_loudness(db, words, n, max_len, duration):
         e = min(duration, s + max_len)
         if any(not (e <= p["start"] or s >= p["end"]) for p in picks):
             continue
-        if not any(s <= w["s"] <= e for w in words):
+        slice_words = [w for w in words if s <= w["s"] <= e]
+        if not slice_words:
             continue
-        picks.append({"start": s, "end": e, "score": 50, "category": "other", "hook": "WAIT FOR IT",
-                      "title": "Loud moment", "description": "", "hashtags": [], "highlight_words": [],
-                      "reason": "Picked by loudness because the AI was unavailable."})
+        speech_text = " ".join(w["w"] for w in slice_words[:12]).strip()
+        hook = (speech_text[:28].upper() + "...") if speech_text else "WAIT FOR IT"
+        clip_title = f"{title[:40]} - Highlight" if title else (f"{speech_text[:50]}" if speech_text else "High Energy Moment")
+        desc = f"Watch this crazy moment from {uploader or 'the stream'}! {speech_text[:120]}"
+        hashtags = ["Shorts", "viral", "trending", "fyp"]
+        if uploader:
+            clean_up = re.sub(r"[^A-Za-z0-9]", "", uploader)
+            if clean_up:
+                hashtags.append(clean_up)
+        picks.append({"start": s, "end": e, "score": 75, "category": "highlight", "hook": hook,
+                      "title": clip_title, "description": desc, "hashtags": hashtags,
+                      "highlight_words": [w["w"] for w in slice_words[:3]],
+                      "reason": "Picked by energy and speech peaks."})
         if len(picks) >= n:
             break
     return picks
@@ -303,7 +322,7 @@ MANDATORY SELECTION RULES:
             log(f"AI window {a:.0f}-{b:.0f}s failed: {e}")
     note = ""
     if not used_model:
-        found = fallback_by_loudness(db, words, max_clips, max_len, duration)
+        found = fallback_by_loudness(db, words, max_clips, max_len, duration, title=title, uploader=uploader)
         note = "The AI was unavailable, so clips were picked by loudness only."
     clips = []
     for c in sorted(found, key=lambda c: -_num(c.get("score"))):
@@ -356,9 +375,9 @@ def describe(text, title="", uploader=""):
 
 
 # ---------------------------------------------------------------- live: two judges that never see each other's input
-TRANSCRIPT_JUDGE = """You are a clip scout for short-form gaming and streaming videos (YouTube Shorts, Reels, TikTok).
+TRANSCRIPT_JUDGE = """You are an elite short-form clip scout for viral YouTube Shorts, Reels, and TikTok.
 You only get the WORDS spoken on a live stream: a timestamped transcript, each line starting with [seconds].
-You cannot hear how loud anything was or see the chat; judge purely on what was said.
+You cannot hear how loud anything was or see the chat; judge purely on the punchline, humor, drama, or shock value of what was said.
 
 Stream title: {title}
 Channel: {uploader}
@@ -366,20 +385,20 @@ Channel: {uploader}
 The transcript covers seconds {start:.0f} to {now:.0f}. If a moment is still unfolding at the very end, leave it out;
 you will see it again in the next check.
 {must}
-Pick up to {n} moments that would work as standalone clips for someone who has never seen the stream:
-funny moments, fails, clutch plays, rage, shock, hot takes, or a short story with a payoff.
+Pick up to {n} moments that have a real viral catching point: an undeniable punchline, savage roast, shocking statement, or hilarious story with a punchy payoff.
+CRITICAL: DO NOT give high scores (85+) to calm talk or low-energy statements (like 'I haven't slept') without humor or a punchline. Only score 85+ if the moment is guaranteed viral entertainment with a strong punchline.
 """
-MUST_PICK = "This time you MUST return the single best moment in this stretch, even if it is only decent."
-NOT_MUST = "Most checks should return []. Only return a moment you would stop scrolling for."
+MUST_PICK = "Pick the single strongest moment ONLY if it has a genuine viral punchline, crazy reaction, or hilarious climax. If this stretch is just ordinary talk with no catching point, return []."
+NOT_MUST = "Most checks should return []. Only return a moment with a real catching point that would stop someone scrolling."
 
 SIGNAL_JUDGE = """You judge a live stream ONLY from its reaction signals. You cannot hear the words or see the video.
 Each line is a 2-second slice: [seconds] L=how much louder than usual the streamer was (0 = normal,
 +2 or more = shouting or laughing hard, negative = quieter){chat_note}
 
-Find moments where something clearly happened: a sudden jump in loudness (shouting, screaming, laughing),
-{chat_hint}a stretch that stays well above normal. Ignore steady background noise or music that is loud the whole time.
-Return up to 3 moments with start and end (seconds), score 0-100 for how strong the reaction is, and a short reason.
-Return [] if nothing stands out. Most stretches have nothing.
+Find genuine reaction spikes: sudden intense shouting, loud laughter, screaming, or huge chat spam.
+Ignore steady background noise, normal talking, or quiet gameplay.
+Return up to 3 moments with start and end (seconds), score 0-100 for reaction strength, and a short reason.
+Only score 85+ if there is an extreme reaction spike (L >= +2.0 or massive chat spike). Ordinary speaking is <60. Return [] if nothing stands out.
 
 Signals from second {start:.0f} to {now:.0f}:
 {lines}

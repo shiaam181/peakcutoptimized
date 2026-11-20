@@ -117,7 +117,7 @@ def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
         px_faces = [(d[0] * src_w, d[1] * src_h, d[3] * src_h) for d in det]
         per_frame.append(px_faces)
 
-    tol = 0.035 * src_w
+    tol = 0.08 * src_w
     best_c, best_hits = None, []
 
     for faces in per_frame:
@@ -130,14 +130,14 @@ def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
             if len(hits) > len(best_hits):
                 best_c, best_hits = c, hits
 
-    if not best_c or len(best_hits) < max(4, int(0.45 * len(frames))):
+    if not best_c or len(best_hits) < max(3, int(0.20 * len(frames))):
         return None
 
     cx, cy, fh = (float(v) for v in np.median(np.array([h[1] for h in best_hits]), axis=0))
 
-    # A webcam overlay is small and positioned towards an edge (left or right side)
-    # A centered face or a face larger than 22% of screen height is a normal presenter, not a facecam
-    if fh > 0.22 * src_h or (0.28 * src_w < cx < 0.72 * src_w):
+    # A webcam overlay is positioned towards an edge (left or right side, or bottom corner)
+    # A centered presenter taking up the middle upper screen is a regular talking head, not a facecam
+    if fh > 0.38 * src_h or (0.35 * src_w < cx < 0.65 * src_w and cy < 0.52 * src_h):
         return None
 
     circle = _detect_circle_cam([frames[i] for i, _ in best_hits], cx, cy, fh, src_w, src_h)
@@ -146,10 +146,10 @@ def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
         r += 4
         return {"x": int(x - r), "y": int(y - r), "w": int(2 * r), "h": int(2 * r), "shape": "circle"}
 
-    bh = min(src_h, 3.0 * fh)
-    bw = min(src_w, bh * 4.0 / 3.0)
+    bh = min(src_h, max(3.2 * fh, src_h * 0.32))
+    bw = min(src_w, bh * 16.0 / 9.0)
     x = max(0, min(src_w - bw, cx - bw / 2.0))
-    y = max(0, min(src_h - bh, cy - bh * 0.45))
+    y = max(0, min(src_h - bh, cy - bh * 0.42))
     return {"x": int(x), "y": int(y), "w": int(bw), "h": int(bh), "shape": "rect"}
 
 
@@ -201,42 +201,91 @@ def detect_podcast_faces(video_path, start: float, duration: float, src_w: int, 
     return None
 
 
-def build_facecam_filter(cam: dict, src_w: int, src_h: int, fps: int = 30):
-    """ffmpeg filter: gameplay on top (1150px), webcam enlarged at bottom over blurred game."""
-    top_h = 1150
-    bot_h = H - top_h  # 770
-    gw = min(src_w, int(src_h * W / top_h) // 2 * 2)
-    gx = (src_w - gw) // 2
+def build_facecam_filter(cam: dict, src_w: int, src_h: int, fps: int = 30, reaction_top: bool = True):
+    """ffmpeg filter:
+    - reaction_top=True (Default): Creator's reaction enlarged on TOP (960px), gameplay on BOTTOM (960px).
+      Viewers focus on the creator's face and emotional reactions at eye level, without interference from TikTok/Shorts bottom UI.
+    - reaction_top=False: Classic gameplay on top (1150px), webcam at bottom (770px).
+    """
+    if reaction_top:
+        top_h = H // 2  # 960 (Creator reaction)
+        bot_h = H - top_h  # 960 (Gameplay)
+    else:
+        top_h = 1150  # 1150 (Gameplay)
+        bot_h = H - top_h  # 770 (Creator reaction)
 
-    # Avoid duplicating facecam in the top gameplay crop if possible
+    cw_crop = min(src_w, int(cam["w"])) // 2 * 2
+    ch_crop = min(src_h, int(cam["h"])) // 2 * 2
+    cx_crop = max(0, min(src_w - cw_crop, int(cam["x"]))) // 2 * 2
+    cy_crop = max(0, min(src_h - ch_crop, int(cam["y"]))) // 2 * 2
+
+    # Scale and center facecam
+    target_cam_h = top_h if reaction_top else bot_h
+    scale = max(W / max(1, cw_crop), target_cam_h / max(1, ch_crop))
+    cw = int(cw_crop * scale) // 2 * 2
+    ch = int(ch_crop * scale) // 2 * 2
+    cam_x = max(0, (cw - W) // 2) // 2 * 2
+    cam_y = max(0, (ch - target_cam_h) // 2) // 2 * 2
+    cam_crop = f"crop={cw_crop}:{ch_crop}:{cx_crop}:{cy_crop},scale={cw}:{ch}:flags=lanczos,crop={W}:{target_cam_h}:{cam_x}:{cam_y}"
+
+    # Gameplay crop
+    target_game_h = bot_h if reaction_top else top_h
+    gw = min(src_w, int(src_h * W / target_game_h) // 2 * 2)
+    gx = (src_w - gw) // 2
     if cam["x"] < gx + gw and cam["x"] + cam["w"] > gx:
         is_right = (cam["x"] + cam["w"] / 2.0) > (src_w / 2.0)
         if is_right:
             gx = max(0, min(int(cam["x"]) - gw, gx))
         else:
             gx = min(src_w - gw, max(int(cam["x"] + cam["w"]), gx))
-    gx = gx // 2 * 2
+    gx = max(0, min(src_w - gw, gx)) // 2 * 2
+    gw = min(gw, src_w - gx) // 2 * 2
 
-    room_w = W - 120
-    room_h = bot_h - 120
-    scale = min(room_w / cam["w"], room_h / cam["h"])
-    cw = int(cam["w"] * scale) // 2 * 2
-    ch = int(cam["h"] * scale) // 2 * 2
-    cam_x = (W - cw) // 2
-    cam_y = (bot_h - ch) // 2
-
-    cam_crop = f"crop={cam['w']}:{cam['h']}:{cam['x']}:{cam['y']},scale={cw}:{ch}:flags=lanczos"
-
-    parts = [
-        f"[0:v]fps={fps},split=3[fc_g][fc_b][fc_c]",
-        f"[fc_g]crop={gw}:{src_h}:{gx}:0,scale={W}:{top_h}:flags=lanczos,setsar=1[fc_top]",
-        f"[fc_b]scale={W}:{bot_h}:force_original_aspect_ratio=increase,crop={W}:{bot_h},"
-        f"boxblur=30:3,eq=brightness=-0.14[fc_bg]",
-        f"[fc_c]{cam_crop},setsar=1[fc_cam]",
-        f"[fc_bg][fc_cam]overlay={cam_x}:{cam_y}[fc_bot]",
-        f"[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];"
-    ]
-    return "".join(parts), top_h + 15, 180  # cap_y (at seam), hook_y (top of gameplay)
+    if cam.get("shape") == "circle":
+        room_w = W - 120
+        room_h = target_cam_h - 120
+        c_scale = min(room_w / max(1, cw_crop), room_h / max(1, ch_crop))
+        c_cw = int(cw_crop * c_scale) // 2 * 2
+        c_ch = int(ch_crop * c_scale) // 2 * 2
+        c_cam_x = (W - c_cw) // 2
+        c_cam_y = (target_cam_h - c_ch) // 2
+        c_crop = f"crop={cw_crop}:{ch_crop}:{cx_crop}:{cy_crop},scale={c_cw}:{c_ch}:flags=lanczos"
+        if reaction_top:
+            parts = [
+                f"[0:v]setpts=PTS-STARTPTS,fps={fps},split=3[fc_g][fc_b][fc_c]",
+                f"[fc_b]scale={W}:{top_h}:force_original_aspect_ratio=increase,crop={W}:{top_h},boxblur=30:3,eq=brightness=-0.14[fc_bg]",
+                f"[fc_c]{c_crop},setsar=1[fc_cam]",
+                f"[fc_bg][fc_cam]overlay={c_cam_x}:{c_cam_y}[fc_top]",
+                f"[fc_g]crop={gw}:{src_h}:{gx}:0,scale={W}:{bot_h}:flags=lanczos,setsar=1[fc_bot]",
+                f"[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0]"
+            ]
+        else:
+            parts = [
+                f"[0:v]setpts=PTS-STARTPTS,fps={fps},split=3[fc_g][fc_b][fc_c]",
+                f"[fc_g]crop={gw}:{src_h}:{gx}:0,scale={W}:{top_h}:flags=lanczos,setsar=1[fc_top]",
+                f"[fc_b]scale={W}:{bot_h}:force_original_aspect_ratio=increase,crop={W}:{bot_h},boxblur=30:3,eq=brightness=-0.14[fc_bg]",
+                f"[fc_c]{c_crop},setsar=1[fc_cam]",
+                f"[fc_bg][fc_cam]overlay={c_cam_x}:{c_cam_y}[fc_bot]",
+                f"[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0]"
+            ]
+    else:
+        if reaction_top:
+            parts = [
+                f"[0:v]setpts=PTS-STARTPTS,fps={fps},split=2[fc_c][fc_g]",
+                f"[fc_c]{cam_crop},setsar=1[fc_top]",
+                f"[fc_g]crop={gw}:{src_h}:{gx}:0,scale={W}:{bot_h}:flags=lanczos,setsar=1[fc_bot]",
+                f"[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0]"
+            ]
+        else:
+            parts = [
+                f"[0:v]setpts=PTS-STARTPTS,fps={fps},split=2[fc_g][fc_c]",
+                f"[fc_g]crop={gw}:{src_h}:{gx}:0,scale={W}:{top_h}:flags=lanczos,setsar=1[fc_top]",
+                f"[fc_c]{cam_crop},setsar=1[fc_bot]",
+                f"[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0]"
+            ]
+    cap_y = (top_h + 10) if reaction_top else (top_h + 15)
+    hook_y = 150 if reaction_top else 180
+    return ";".join(parts) + ";", cap_y, hook_y
 
 
 def build_split_filter(top_box, bot_box, src_w: int, src_h: int, fps: int = 30):
@@ -245,11 +294,21 @@ def build_split_filter(top_box, bot_box, src_w: int, src_h: int, fps: int = 30):
     bx, by, bw, bh = bot_box
     half = H // 2  # 960
 
+    tw = min(src_w, int(tw)) // 2 * 2
+    th = min(src_h, int(th)) // 2 * 2
+    tx = max(0, min(src_w - tw, int(tx))) // 2 * 2
+    ty = max(0, min(src_h - th, int(ty))) // 2 * 2
+
+    bw = min(src_w, int(bw)) // 2 * 2
+    bh = min(src_h, int(bh)) // 2 * 2
+    bx = max(0, min(src_w - bw, int(bx))) // 2 * 2
+    by = max(0, min(src_h - bh, int(by))) // 2 * 2
+
     parts = [
-        f"[0:v]fps={fps},split=2[sp_t][sp_b]",
+        f"[0:v]setpts=PTS-STARTPTS,fps={fps},split=2[sp_t][sp_b]",
         f"[sp_t]crop={tw}:{th}:{tx}:{ty},scale={W}:{half}:flags=lanczos,setsar=1[sp_top]",
         f"[sp_b]crop={bw}:{bh}:{bx}:{by},scale={W}:{half}:flags=lanczos,setsar=1[sp_bot]",
-        f"[sp_top][sp_bot]vstack=inputs=2,setsar=1[v0];"
+        f"[sp_top][sp_bot]vstack=inputs=2,setsar=1[v0]"
     ]
-    return "".join(parts), half + 10, 180  # cap_y (at center seam), hook_y (top)
+    return ";".join(parts) + ";", half + 10, 180  # cap_y (at center seam), hook_y (top)
 
