@@ -374,6 +374,85 @@ def describe(text, title="", uploader=""):
         return blank
 
 
+def make_short_clip(words, duration: float, title: str = "", uploader: str = "", style: str = "bounce", layout: str = "auto") -> dict:
+    """Turn an already-short video (YouTube Short / Reel / short upload) into a finished clip with creator credit."""
+    clean_title = re.sub(r'#\S+', '', title).strip()
+    clean_title = re.sub(r'\s{2,}', ' ', clean_title).strip() or "Crazy Moment"
+
+    hook = clean_title.upper()
+    if len(hook) > 35:
+        hook = hook[:32].rsplit(' ', 1)[0] + "..."
+    if not hook or len(hook) < 4:
+        hook = "WAIT FOR IT..."
+
+    credit_str = f"Credit: {uploader}" if uploader else "Credit to original creator"
+    post_title = f"{clean_title} ({credit_str})"[:95]
+    desc = f"Original video by {uploader or 'creator'}. Full credit to {uploader or 'the creator'}! {clean_title}".strip()
+
+    transcript_sample = " ".join(w["w"] for w in words[:60]) if words else ""
+    hw = [w["w"] for w in words[:5] if len(w.get("w", "")) > 3]
+
+    if transcript_sample:
+        try:
+            prompt = (
+                f"You are packaging an uploaded creator short video (YouTube Short / Instagram Reel) for clipping.\n"
+                f"Original Title: {_safe(title)}\n"
+                f"Original Creator: {_safe(uploader)}\n"
+                f"Transcript: {_safe(transcript_sample)}\n\n"
+                f"Generate a viral hook, title, and description giving full credit to the creator.\n"
+                f"Do NOT put hashtags in the description.\n"
+                f"Return JSON matching the schema."
+            )
+            schema = {
+                "type": "OBJECT",
+                "properties": {
+                    "hook": {"type": "STRING"},
+                    "title": {"type": "STRING"},
+                    "description": {"type": "STRING"},
+                    "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}}
+                },
+                "required": ["hook", "title", "description", "hashtags"]
+            }
+            out, _m, _spent = ask_ai(prompt, schema=schema, purpose="Creator short adaptation")
+            if out and isinstance(out, dict):
+                if out.get("hook"):
+                    hook = _clean(out["hook"]).upper()[:35]
+                if out.get("title"):
+                    post_title = _clean(out["title"])[:95]
+                if out.get("description"):
+                    ai_desc = re.sub(r'#\S+', '', _clean(out["description"])).strip()
+                    if uploader and uploader.lower() not in ai_desc.lower():
+                        ai_desc = f"Credit: {uploader}. {ai_desc}"
+                    desc = ai_desc[:300]
+        except Exception:
+            pass
+
+    tags = ["Shorts", "Viral", "Trending"]
+    if uploader:
+        c_up = re.sub(r"[^A-Za-z0-9]", "", uploader)
+        if c_up and c_up not in tags:
+            tags.append(c_up)
+
+    return {
+        "id": "clip01",
+        "start": 0.0,
+        "end": round(max(3.0, float(duration)), 2),
+        "score": 90,
+        "category": "highlight",
+        "hook": hook,
+        "title": post_title,
+        "description": desc,
+        "hashtags": tags[:8],
+        "highlight_words": hw[:4],
+        "reason": f"Creator Short video packaged with animated captions and full credit to {uploader or 'creator'}.",
+        "style": style,
+        "layout": layout,
+        "status": "queued",
+        "version": 0,
+    }
+
+
+
 # ---------------------------------------------------------------- live: two judges that never see each other's input
 TRANSCRIPT_JUDGE = """You are an elite short-form clip scout for viral YouTube Shorts, Reels, and TikTok.
 You only get the WORDS spoken on a live stream: a timestamped transcript, each line starting with [seconds].

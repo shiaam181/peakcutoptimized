@@ -186,11 +186,16 @@ class Session:
 
             multi = len(info["urls"]) > 1
             if multi:
-                # YouTube streams deliver video and audio in separate HLS playlists with different playlist heads.
-                # Direct ffmpeg with separate -i inputs loses sync (-c copy does not align multi-source HLS timestamps).
-                # Piping yt-dlp to ffmpeg aligns the HLS manifests by EXT-X-PROGRAM-DATE-TIME into a single synchronized stream.
-                cmd_ydl = ["yt-dlp", "-q", "--no-warnings", "-f", "b[height<=720]/bv*[height<=720]+ba/b", "-o", "-", url]
-                self.ydl_proc = subprocess.Popen(cmd_ydl, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                # Use Streamlink for live streams to achieve industry-standard sub-5ms HLS/DASH packet sync.
+                # Streamlink synchronizes video and audio by UTC program-date-time before emitting clean MPEG-TS.
+                # Falls back to yt-dlp if streamlink is ever unavailable.
+                import shutil
+                sl_bin = shutil.which("streamlink")
+                if sl_bin:
+                    cmd_ingest = [sl_bin, "--stdout", "--default-stream", "720p,best", url]
+                else:
+                    cmd_ingest = ["yt-dlp", "-q", "--no-warnings", "-f", "b[height<=720]/bv*[height<=720]+ba/b", "-o", "-", url]
+                self.ydl_proc = subprocess.Popen(cmd_ingest, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                                  creationflags=media.NO_WINDOW)
                 cmd = ["ffmpeg", "-v", "error", "-i", "pipe:0",
                        "-map", "0:v:0", "-map", "0:a:0", "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),

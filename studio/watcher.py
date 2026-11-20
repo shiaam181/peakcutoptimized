@@ -146,8 +146,12 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
     if not videos:
         return []
 
-    # Filter by minimum duration to ignore YouTube Shorts and short teasers
-    long_videos = [v for v in videos if v["duration"] >= min_duration or v["duration"] == 0]
+    # Filter by minimum duration, but allow YouTube Shorts when clip_shorts is enabled
+    clip_shorts = c.get("clip_shorts", True)
+    if clip_shorts:
+        candidate_videos = [v for v in videos if v["duration"] >= 10 or v["duration"] == 0]
+    else:
+        candidate_videos = [v for v in videos if v["duration"] >= min_duration or v["duration"] == 0]
 
     seen = set(c.get("seen_upload_ids") or [])
 
@@ -169,14 +173,14 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
             creators.log(cid, f"Auto-clipping armed: tracking future uploads (seeded {len(all_ids)} existing videos)")
             return []
         else:
-            # Workspace created or forced: pick the top long video to clip, seed all other videos
-            target_vid = long_videos[0]["id"] if long_videos else None
+            # Workspace created or forced: pick the top video to clip, seed all other videos
+            target_vid = candidate_videos[0]["id"] if candidate_videos else None
             other_ids = [v["id"] for v in videos if not target_vid or v["id"] != target_vid]
             creators.seed_seen_uploads(cid, other_ids)
             seen.update(other_ids)
-    elif force_clip_latest and long_videos:
+    elif force_clip_latest and candidate_videos:
         # User explicitly requested latest: allow if not currently running or queued
-        latest_id = long_videos[0]["id"]
+        latest_id = candidate_videos[0]["id"]
         try:
             active_ids = {
                 extract_video_id((j.get("source") or {}).get("url", ""))
@@ -188,17 +192,18 @@ def check_creator_uploads(cid: str, force_clip_latest: bool = False) -> list:
             seen.discard(latest_id)
 
     queued_jobs = []
-    for v in long_videos:
+    for v in candidate_videos:
         if v["id"] in seen:
             continue
         try:
+            is_short = 0 < v["duration"] <= 90
             job = jobs.create(
                 source={"type": "url", "url": v["url"], "name": v["title"]},
                 options={
-                    "max_clips": clip_count,
+                    "max_clips": 1 if is_short else clip_count,
                     "quality": 1080,
-                    "min_len": int(c.get("min_len") or 30),
-                    "max_len": int(c.get("max_len") or 50),
+                    "min_len": 10 if is_short else int(c.get("min_len") or 30),
+                    "max_len": 90 if is_short else int(c.get("max_len") or 50),
                 },
                 creator=c["id"],
             )

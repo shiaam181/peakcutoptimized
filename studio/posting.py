@@ -42,10 +42,12 @@ def _mirror(p):
         jobs.save(job)
 
 
-def _next_slot(account_id, gap_min, cap):
+def _next_slot(account_id, gap_min, cap, min_initial_delay_sec=0):
     """Earliest time that respects the gap between posts and the daily cap for this account."""
     mine = [p for p in _mine() if p["account"] == account_id and p["status"] in OPEN + ("posted",)]
-    t = max(time.time(), max((p.get("posted_at") or p["due_at"] for p in mine), default=0) + gap_min * 60)
+    earliest = time.time() + min_initial_delay_sec
+    last_post = max((p.get("posted_at") or p["due_at"] for p in mine), default=0)
+    t = max(earliest, last_post + gap_min * 60)
     if cap and cap < 9000:
         for _ in range(30):
             if sum(1 for p in mine if _day(p.get("posted_at") or p["due_at"]) == _day(t)) < cap:
@@ -58,15 +60,23 @@ def _next_slot(account_id, gap_min, cap):
 def enqueue(job, clip, account_ids, now=False) -> list:
     c = creators.get(job["creator"]) or creators.DEFAULTS
     made = []
+    gap_min = max(15, int(c.get("post_gap_min", 45)))
     with _lock:
-        for aid in account_ids:
+        for i, aid in enumerate(account_ids):
             acc = accounts.get(aid)
             if not acc:
                 continue
             if any(p["job"] == job["id"] and p["clip"] == clip["id"] and p["account"] == aid
                    and p["status"] in OPEN + ("posted",) for p in _mine()):
                 continue  # never post the same clip to the same account twice
-            due = time.time() if now else _next_slot(aid, c["post_gap_min"], c["daily_cap"])
+            if now:
+                due = time.time()
+            else:
+                # Stagger across different connected accounts so all platforms are not blasted at the exact same minute.
+                # Auto-posted live stream clips start with a buffer (e.g. 15 min), and each account in the set is staggered by 15 min.
+                stagger_sec = i * 900
+                initial_delay = 900 + stagger_sec
+                due = _next_slot(aid, gap_min, c.get("daily_cap", 9999), min_initial_delay_sec=initial_delay)
             p = {"id": secrets.token_hex(8), "user": ctx.uid(), "job": job["id"], "clip": clip["id"], "creator": job["creator"],
                  "account": aid, "account_name": acc["name"], "platform": acc["platform"], "status": "scheduled",
                  "due_at": due, "created": time.time(), "title": clip.get("title") or clip.get("hook") or "Clip",
@@ -138,7 +148,7 @@ def _post(p):
         if acc.get("zernio_account_id") or (accounts._user_zernio_key() and not acc.get("token") and not acc.get("refresh_token")):
             if platform == "instagram":
                 cap = f"{title}\n\n{cap}".strip()
-            rid, url = accounts.zernio_upload(acc, path, title, cap, scheduled_for=p.get("due_at"), job_id=job["id"])
+            rid, url = accounts.zernio_upload(acc, path, title, cap, scheduled_for=p.get("due_at"), job_id=job["id"], tags=clip.get("hashtags", []))
         elif platform == "youtube":
             rid, url = accounts.youtube_upload(acc, path, title, cap, clip.get("hashtags", []), creator["privacy"])
         elif platform == "instagram":

@@ -342,7 +342,7 @@ def _all() -> list:
     return accs
 
 
-def zernio_upload(acc, path: Path, title: str, caption: str, scheduled_for: float = None, job_id: str = None):
+def zernio_upload(acc, path: Path, title: str, caption: str, scheduled_for: float = None, job_id: str = None, tags: list = None):
     """Uploads a video to Zernio and creates a post for Instagram Reel or YouTube Short."""
     key = _user_zernio_key()
     if not key:
@@ -382,17 +382,28 @@ def zernio_upload(acc, path: Path, title: str, caption: str, scheduled_for: floa
     if not target_id:
         raise RuntimeError(f"No Zernio account found for platform {acc['platform']}.")
 
+    plat_entry = {"platform": acc["platform"], "accountId": target_id}
+    if acc["platform"] == "youtube":
+        plat_entry["platformSpecificData"] = {
+            "title": title[:100],
+            "categoryId": str(config.YOUTUBE_CATEGORY_ID),  # 24 = Entertainment
+            "visibility": "public",
+            "madeForKids": False
+        }
+
     post_body = {
         "title": title[:100],
         "content": caption[:2000],
-        "platforms": [
-            {"platform": acc["platform"], "accountId": target_id}
-        ],
+        "platforms": [plat_entry],
         "mediaItems": [
             {"type": "video", "url": media_url}
         ],
         "publishNow": True if not scheduled_for or scheduled_for <= time.time() + 60 else False
     }
+    if tags:
+        clean_tags = [re.sub(r"^#", "", str(t)).strip() for t in tags if str(t).strip()]
+        if clean_tags:
+            post_body["tags"] = clean_tags[:15]
     if not post_body["publishNow"] and scheduled_for:
         post_body["scheduledFor"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(scheduled_for))
 
@@ -524,7 +535,7 @@ def _yt_token(acc) -> str:
 def youtube_upload(acc, path: Path, title: str, description: str, tags: list, privacy: str):
     token = _yt_token(acc)
     meta = {"snippet": {"title": re.sub(r"[<>]", "", title)[:100] or "Clip", "description": re.sub(r"[<>]", "", description)[:4900],
-                        "tags": tags[:15], "categoryId": "20"},
+                        "tags": tags[:15], "categoryId": str(config.YOUTUBE_CATEGORY_ID)},
             "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False}}
     size = path.stat().st_size
     start = _check(httpx.post("https://www.googleapis.com/upload/youtube/v3/videos",

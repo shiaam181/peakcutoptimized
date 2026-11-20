@@ -237,4 +237,6 @@ def _read_google_client() -> tuple:
 MAX_SOURCE_HEIGHT = int(env("PEAKCUT_MAX_SOURCE_HEIGHT", "2160"))
 OUT_W, OUT_H, OUT_FPS = 1080, 1920, 30
 LIVE_AV_OFFSET = float(env("PEAKCUT_LIVE_AV_OFFSET", "0.0"))   # seconds offset if stream provider has native A/V drift
+YOUTUBE_CATEGORY_ID = env("PEAKCUT_YOUTUBE_CATEGORY", "24")  # 24: Entertainment (replaces generic People & Blogs 22)
+
 

@@ -702,7 +702,7 @@ def _run_job(job):
         (d / "words.json").write_text(json.dumps(words), encoding="utf-8")
         _set(job, stage="Finding the best moments" + where, word_count=len(words))
         left = int(o["max_clips"]) - len(job["clips"])
-        if left <= 0 or len(bw) < 8:
+        if left <= 0 or (len(bw) < 8 and job.get("duration", 0) > 90):
             job["done_blocks"] = bi + 1
             save(job)
             continue
@@ -722,6 +722,21 @@ def _run_job(job):
             futures.append((renders.submit(ctx.bind(make), c, list(words)), c))
         job["ai"] = {"model": model, "tokens": tokens, "note": "", "log": notes[-5:]}
         job["done_blocks"] = bi + 1       # a restart from here on carries on with the next part
+        save(job)
+    if not job["clips"] and job.get("duration", 0) <= 90:
+        uploader_name = job.get("uploader", "")
+        if not uploader_name and job.get("creator"):
+            uploader_name = (creators.get(job["creator"]) or {}).get("name", "")
+        short_clip = brain.make_short_clip(
+            words=list(words),
+            duration=job["duration"],
+            title=job.get("title", ""),
+            uploader=uploader_name,
+            style=o.get("style", "bounce"),
+            layout=o.get("layout", "auto")
+        )
+        job["clips"].append(short_clip)
+        futures.append((renders.submit(ctx.bind(make), short_clip, list(words)), short_clip))
         save(job)
     if futures:
         _set(job, stage="Finishing the clips", progress=max(job["progress"], 0.92))
