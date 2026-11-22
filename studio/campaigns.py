@@ -1,7 +1,8 @@
 """Campaigns marketplace and trending live streams.
 
-Brands pay clippers per view for posting short-form clips with campaign tags.
-Clippers can browse active campaigns, enroll their creators, and track view payouts.
+Brands and Whop creators pay clippers per view for posting short-form clips.
+Provides full campaign guidelines, content requirements, platform payout rates,
+and Whop submission guides.
 """
 
 from __future__ import annotations
@@ -9,7 +10,6 @@ import json
 from pathlib import Path
 from . import config, ctx, creators
 
-# Verified campaigns matching the marketplace catalog
 CATALOG: list[dict] = [
     {
         "id": "kai-cenat-gta6",
@@ -20,20 +20,45 @@ CATALOG: list[dict] = [
         "budget_left": 10000,
         "rate_per_1k": 2.0,
         "badge": "• New Campaign",
-        "badge_color": "#3B82F6",
-        "banner_text": "KAI CENAT",
-        "banner_sub": "GTA MARATHON $10,000",
         "pool_badge": "$10k prize pool",
         "banner_bg": "linear-gradient(135deg, #1e1338 0%, #3b1b6e 50%, #571649 100%)",
-        "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/5be023b1-2dd4-4fa9-b88e-670dc951d8d1-profile_image-300x300.png",
-        "platforms": ["instagram", "tiktok", "twitter", "youtube"],
+        "banner_text": "KAI CENAT",
+        "banner_sub": "GTA MARATHON $10,000",
+        "platforms": ["tiktok", "youtube", "instagram", "twitter"],
+        "category": "Gaming & Streams",
         "streamer": "Kai Cenat",
         "streamer_channel": "https://www.twitch.tv/kaicenat",
-        "tags": "#GTA6 #KaiCenat #ClippedAndSniped",
-        "hook_text": "KAI CENAT'S GTA 6 MARATHON",
-        "rules": "Clips must include the campaign hashtag #GTA6 and tag @KaiCenat. Payout is calculated based on cumulative organic views across Instagram Reels, TikTok, YouTube Shorts, and X.",
-        "min_views": 1000,
+        "tags": "#GTA6 #KaiCenat #ClippedAndSniped #WhopRewards",
+        "hook_text": "KAI CENAT GTA 6 MARATHON",
+        "whop_url": "https://whop.com/hub/creators",
         "ends_in": "14 days",
+        "min_views": 1000,
+        "rates": {
+            "TikTok": "$2.50 / 1k views",
+            "YouTube Shorts": "$2.00 / 1k views",
+            "Instagram Reels": "$1.50 / 1k views",
+            "X / Twitter": "$1.00 / 1k views",
+        },
+        "content_rules": [
+            "Clip funny reactions, crazy fails, rage moments, and high-energy GTA 6 gameplay from Kai Cenat's streams.",
+            "Video must be formatted in 9:16 vertical (1080x1920) with animated subtitles.",
+            "Must feature a strong hook in the opening 3 seconds.",
+            "Source footage must be from Kai Cenat's official Twitch streams or YouTube VODs.",
+        ],
+        "prohibited": [
+            "No reposting existing TikToks or other clippers' watermarked edits.",
+            "No raw stream footage without captions or facecam zoom.",
+            "No fake, bot, or purchased view engagement (Whop automated fraud scanner disqualifies fake views).",
+            "No copyrighted music that triggers platform mute.",
+        ],
+        "geo_rules": "Tier 1 views (United States, United Kingdom, Canada, Australia) count at 100% payout rate. Minimum 1,000 verified organic views required for payout.",
+        "submission_guide": [
+            "1. Generate your clips using ShineCut's clipping engine.",
+            "2. Post your video to TikTok, YouTube Shorts, or Instagram Reels.",
+            "3. Ensure the description contains #GTA6 #KaiCenat and tags @KaiCenat.",
+            "4. Wait 24 to 48 hours for the video to gain organic views.",
+            "5. Copy your published video link and submit it on the Whop Campaign portal to track views and collect payout.",
+        ],
     },
     {
         "id": "kreekcraft-gta6",
@@ -44,44 +69,84 @@ CATALOG: list[dict] = [
         "budget_left": 3600,
         "rate_per_1k": 0.50,
         "badge": "🚀 Get Paid to Clip",
-        "badge_color": "#EC4899",
-        "banner_text": "KreekCraft",
-        "banner_sub": "GTA 6 Clipping",
         "pool_badge": "$0.50 per 1k views",
         "banner_bg": "linear-gradient(135deg, #231224 0%, #4a1934 50%, #1e1a38 100%)",
-        "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/601170d1-6bfb-4dbe-a178-0cb934444747-profile_image-300x300.png",
-        "platforms": ["instagram", "tiktok", "youtube"],
+        "banner_text": "KreekCraft",
+        "banner_sub": "GTA 6 Clipping",
+        "platforms": ["youtube", "tiktok", "instagram"],
+        "category": "Gaming & Highlights",
         "streamer": "KreekCraft",
         "streamer_channel": "https://www.youtube.com/@KreekCraft",
-        "tags": "#KreekCraft #GTA6 #ClipLaunch",
-        "hook_text": "KREEKCRAFT GTA 6 HIGHLIGHT",
-        "rules": "Flat payout rate of $0.50 for every 1,000 views. Minimum clip duration 15 seconds. Submissions must be original edits with captions.",
-        "min_views": 500,
+        "tags": "#KreekCraft #GTA6 #ClipLaunch #GamingHighlights",
+        "hook_text": "KREEKCRAFT GTA 6 MOMENT",
+        "whop_url": "https://whop.com",
         "ends_in": "21 days",
+        "min_views": 500,
+        "rates": {
+            "YouTube Shorts": "$0.50 / 1k views",
+            "TikTok": "$0.50 / 1k views",
+            "Instagram Reels": "$0.50 / 1k views",
+        },
+        "content_rules": [
+            "Clip high-energy gameplay highlights, unexpected glitches, and funny moments from KreekCraft's videos.",
+            "Video length must be between 15 and 60 seconds.",
+            "Clear vertical 9:16 layout with readable captions.",
+        ],
+        "prohibited": [
+            "No re-uploading full unedited video segments.",
+            "No misleading clickbait titles unrelated to the clip.",
+        ],
+        "geo_rules": "Global views accepted. All organic platforms qualify.",
+        "submission_guide": [
+            "1. Create captioned shorts from KreekCraft streams or uploads.",
+            "2. Publish to your channel with #KreekCraft #GTA6.",
+            "3. Submit link via the Whop / ClipLaunch dashboard.",
+            "4. Earnings automatically calculated and released weekly.",
+        ],
     },
     {
-        "id": "dangasd3m-ruckus",
-        "title": "Dangasd3m x RUCKUS | GTA 6",
-        "brand": "Ruckus",
-        "verified": False,
-        "prize_pool": 1000,
-        "budget_left": 906,
-        "rate_per_1k": 2.00,
-        "badge": "$2 per 1k views",
-        "badge_color": "#F59E0B",
-        "banner_text": "Dangasd3m x RUCKUS",
-        "banner_sub": "GTA 6 Exclusive",
-        "pool_badge": "$2 per 1k views",
-        "banner_bg": "linear-gradient(135deg, #1b263b 0%, #314a68 50%, #526f8d 100%)",
-        "avatar": "",
-        "platforms": ["tiktok"],
-        "streamer": "Dangasd3m",
-        "streamer_channel": "",
-        "tags": "#Ruckus #GTA6 #Dangasd3m",
-        "hook_text": "GTA 6 GAMEPLAY HIGHLIGHT",
-        "rules": "Exclusive TikTok clipping. Top performing clips receive bonus multipliers.",
+        "id": "the-trading-floor",
+        "title": "The Trading Floor Whop Rewards",
+        "brand": "The Trading Floor",
+        "verified": True,
+        "prize_pool": 10000,
+        "budget_left": 8500,
+        "rate_per_1k": 3.00,
+        "badge": "Highest Payout",
+        "pool_badge": "$3.00 / 1k views",
+        "banner_bg": "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)",
+        "banner_text": "TRADING FLOOR",
+        "banner_sub": "Whop Content Bounty",
+        "platforms": ["tiktok", "youtube", "instagram"],
+        "category": "Finance & Trading",
+        "streamer": "The Trading Floor",
+        "streamer_channel": "https://www.youtube.com/@TheTradingFloor",
+        "tags": "#Trading #WhopTrading #StockMarket #TheTradingFloor",
+        "hook_text": "HOW HE MADE 10K TODAY",
+        "whop_url": "https://whop.com",
+        "ends_in": "24 days",
         "min_views": 1000,
-        "ends_in": "7 days",
+        "rates": {
+            "TikTok": "$3.00 / 1k views",
+            "YouTube Shorts": "$2.50 / 1k views",
+            "Instagram Reels": "$2.00 / 1k views",
+        },
+        "content_rules": [
+            "Clip trade analysis, profit/loss reactions, risk management psychology, and live trading moments.",
+            "Must include educational value or suspenseful trade executions.",
+            "Clean captions and bold hook text required.",
+        ],
+        "prohibited": [
+            "No financial advice disclaimers violation (always include educational disclaimer).",
+            "No fabricated or edited fake account screenshots.",
+        ],
+        "geo_rules": "Tier 1 views (US, UK, CA, AU) qualify for top tier CPM.",
+        "submission_guide": [
+            "1. Cut trading stream moments with ShineCut.",
+            "2. Post with #Trading #WhopTrading.",
+            "3. Submit published video URL on Whop Rewards.",
+            "4. Payouts processed every Monday via Stripe or PayPal.",
+        ],
     },
     {
         "id": "jason-pool-9000",
@@ -92,44 +157,76 @@ CATALOG: list[dict] = [
         "budget_left": 9000,
         "rate_per_1k": 2.50,
         "badge": "• New Campaign",
-        "badge_color": "#3B82F6",
-        "banner_text": "JASON THEWEEN",
-        "banner_sub": "$9,000 Prize Pool",
         "pool_badge": "$9k prize pool",
         "banner_bg": "linear-gradient(135deg, #0e2a47 0%, #005f9e 50%, #48cae4 100%)",
-        "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/1fb098d7-789a-4127-b501-1b866c1b48b5-profile_image-300x300.png",
+        "banner_text": "JASON THEWEEN",
+        "banner_sub": "$9,000 Prize Pool",
         "platforms": ["instagram", "tiktok", "twitter", "youtube"],
+        "category": "IRL & Comedy",
         "streamer": "JasonTheween",
         "streamer_channel": "https://www.twitch.tv/jasontheween",
-        "tags": "#JasonTheween #ReachCampaign #GTA6",
-        "hook_text": "JASON THEWEEN REACTS",
-        "rules": "All platforms accepted. Clips must be at least 20 seconds long with captions enabled.",
-        "min_views": 1000,
+        "tags": "#JasonTheween #ReachCampaign #GTA6 #FaZe",
+        "hook_text": "JASON THEWEEN FUNNIEST MOMENT",
+        "whop_url": "https://whop.com",
         "ends_in": "18 days",
+        "min_views": 1000,
+        "rates": {
+            "TikTok": "$2.50 / 1k views",
+            "YouTube Shorts": "$2.00 / 1k views",
+            "Instagram Reels": "$1.50 / 1k views",
+        },
+        "content_rules": [
+            "Clip hilarious stream interactions, awkward dates, Discord calls, and gaming fails.",
+            "Focus on high-energy streamer facial expressions and chat reactions.",
+        ],
+        "prohibited": [
+            "No clips violating Twitch or platform community guidelines.",
+        ],
+        "geo_rules": "US and international organic views accepted.",
+        "submission_guide": [
+            "1. Clip live stream spikes or funny moments.",
+            "2. Post with #JasonTheween #ReachCampaign.",
+            "3. Submit link on Whop dashboard for automated verification.",
+        ],
     },
     {
         "id": "reach-gta6-37500",
-        "title": "GTA 6",
+        "title": "REACH GTA 6 Campaign ($37,500+)",
         "brand": "Reach",
         "verified": True,
         "prize_pool": 15000,
         "budget_left": 13000,
         "rate_per_1k": 1.50,
         "badge": "• New Campaign",
-        "badge_color": "#3B82F6",
-        "banner_text": "REACH GTA 6",
-        "banner_sub": "CAMPAIGNS $37,500+",
         "pool_badge": "$15k prize pool",
         "banner_bg": "linear-gradient(135deg, #2b0c3d 0%, #6a0dad 50%, #d81159 100%)",
-        "avatar": "",
+        "banner_text": "REACH GTA 6",
+        "banner_sub": "CAMPAIGNS $37,500+",
         "platforms": ["instagram", "tiktok", "twitter", "youtube"],
+        "category": "Gaming & Trailer",
         "streamer": "GTA 6 Streamers",
         "streamer_channel": "",
-        "tags": "#ReachGTA6 #GamingClips #GTA6",
+        "tags": "#ReachGTA6 #GamingClips #GTA6 #RockstarGames",
         "hook_text": "GTA 6 UNREAL MOMENT",
-        "rules": "General GTA 6 clipping campaign. Payout pool distributed weekly based on verified view counts.",
-        "min_views": 2000,
+        "whop_url": "https://whop.com",
         "ends_in": "25 days",
+        "min_views": 2000,
+        "rates": {
+            "TikTok": "$1.50 / 1k views",
+            "YouTube Shorts": "$1.50 / 1k views",
+            "Instagram Reels": "$1.00 / 1k views",
+        },
+        "content_rules": [
+            "GTA 6 breakdowns, trailer Easter eggs, map analysis, and gameplay leaks discussion.",
+            "Vertical 9:16 layout with fast pacing.",
+        ],
+        "prohibited": ["No copyrighted full unedited trailer re-uploads."],
+        "geo_rules": "All organic views qualify.",
+        "submission_guide": [
+            "1. Generate short-form content discussing GTA 6.",
+            "2. Tag with #ReachGTA6 and post.",
+            "3. Submit link on Whop.",
+        ],
     },
     {
         "id": "faze-tournament-8500",
@@ -140,24 +237,38 @@ CATALOG: list[dict] = [
         "budget_left": 7800,
         "rate_per_1k": 2.00,
         "badge": "$2 per 1k views",
-        "badge_color": "#EF4444",
-        "banner_text": "FAZE CLAN",
-        "banner_sub": "$8,500 Tournament",
         "pool_badge": "$2 per 1k views",
         "banner_bg": "linear-gradient(135deg, #1a1a1a 0%, #8b0000 50%, #c41e3a 100%)",
-        "avatar": "",
+        "banner_text": "FAZE CLAN",
+        "banner_sub": "$8,500 Tournament",
         "platforms": ["instagram", "tiktok", "twitter", "youtube"],
+        "category": "Esports & Tournaments",
         "streamer": "FaZe Clan",
         "streamer_channel": "https://www.twitch.tv/faze",
-        "tags": "#FaZe #FaZeUp #Clippade",
+        "tags": "#FaZe #FaZeUp #Clippade #EsportsClips",
         "hook_text": "FAZE TOURNAMENT MOMENT",
-        "rules": "FaZe Clan tournament streams and matches. Best moments and clutch plays.",
-        "min_views": 1000,
+        "whop_url": "https://whop.com",
         "ends_in": "10 days",
+        "min_views": 1000,
+        "rates": {
+            "TikTok": "$2.00 / 1k views",
+            "YouTube Shorts": "$2.00 / 1k views",
+            "Instagram Reels": "$1.50 / 1k views",
+        },
+        "content_rules": [
+            "FaZe Clan tournament streams, insane clutches, sniper trickshots, and high-stakes matches.",
+            "Clip must highlight the winning reaction or intense match point.",
+        ],
+        "prohibited": ["No low-resolution or off-screen screen recordings."],
+        "geo_rules": "All organic global views qualify.",
+        "submission_guide": [
+            "1. Clip live FaZe matches using ShineCut.",
+            "2. Post with #FaZe #FaZeUp.",
+            "3. Submit on Whop / Clippade dashboard.",
+        ],
     },
 ]
 
-# Trending live streams featured on Home
 TRENDING_STREAMS: list[dict] = [
     {
         "channel": "ludwig",
@@ -214,17 +325,6 @@ TRENDING_STREAMS: list[dict] = [
         "live": True,
         "verified": True,
     },
-    {
-        "channel": "fanum",
-        "name": "Fanum",
-        "platform": "twitch",
-        "avatar": "https://static-cdn.jtvnw.net/jtv_user_pictures/a5bb3457-3aa3-4f93-b6d4-8d4b3ff255d6-profile_image-300x300.png",
-        "title": "CHILL VIBES AND GTA 6 PREVIEW",
-        "game": "Grand Theft Auto VI",
-        "viewers": 18400,
-        "live": True,
-        "verified": True,
-    },
 ]
 
 
@@ -249,7 +349,7 @@ def _save_user(data: dict):
 
 
 def list_campaigns() -> dict:
-    """Returns the campaigns catalog along with the current user's enrolled status."""
+    """Returns the campaigns catalog with user enrollment status."""
     user_data = _read_user()
     enrolled_ids = {e.get("campaign_id"): e for e in user_data.get("enrolled", [])}
     catalog_out = []
@@ -267,13 +367,15 @@ def list_campaigns() -> dict:
     }
 
 
+def get_campaign(camp_id: str) -> dict | None:
+    return next((c for c in CATALOG if c["id"] == camp_id), None)
+
+
 def enroll(campaign_id: str, creator_id: str) -> dict:
-    """Enrolls a creator in a campaign, auto-updating their rate and tags."""
-    camp = next((c for c in CATALOG if c["id"] == campaign_id), None)
+    camp = get_campaign(campaign_id)
     if not camp:
         raise KeyError(f"No such campaign: {campaign_id}")
 
-    # Update creator settings if creator_id is given
     c = creators.get(creator_id) if creator_id else None
     if c:
         update_data = {
@@ -295,6 +397,10 @@ def enroll(campaign_id: str, creator_id: str) -> dict:
         "views": 0,
         "earnings": 0.0,
         "clips_count": 0,
+        "whop_url": camp.get("whop_url", "https://whop.com"),
+        "tags": camp.get("tags", ""),
+        "rules": camp.get("content_rules", []),
+        "submission_guide": camp.get("submission_guide", []),
     }
     enrolled.append(entry)
     user_data["enrolled"] = enrolled
@@ -304,7 +410,6 @@ def enroll(campaign_id: str, creator_id: str) -> dict:
 
 
 def unenroll(campaign_id: str) -> bool:
-    """Removes a campaign enrollment for the user."""
     user_data = _read_user()
     enrolled = [e for e in user_data.get("enrolled", []) if e.get("campaign_id") != campaign_id]
     user_data["enrolled"] = enrolled
@@ -314,5 +419,4 @@ def unenroll(campaign_id: str) -> bool:
 
 
 def get_trending() -> list[dict]:
-    """Returns the list of trending live streams."""
     return TRENDING_STREAMS

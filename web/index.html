@@ -897,16 +897,27 @@ dialog[open]{animation:fadein .16s ease}
 .btn-gift:hover{background:var(--line);color:var(--text)}
 
 
-/* ---- Whop MCP Styling ---- */
-.whop-mcp-banner{background:var(--frame);color:var(--frame-text);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.whop-mcp-banner.connected{background:var(--good-soft);color:var(--good);border:1px solid rgba(15,138,87,.2)}
-.whop-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:4px;background:#FF6243;color:#fff}
-.whop-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s ease}
-.whop-card:hover{border-color:#FF6243}
-.whop-banner{position:relative;height:120px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
-.whop-btn-clip{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;color:#fff;background:#FF6243;padding:10px 14px;border:0;border-radius:var(--r-sm);cursor:pointer;transition:background-color .15s ease}
-.whop-btn-clip:hover{background:#E04A2D}
-.whop-rates{display:flex;gap:10px;background:var(--muted);padding:8px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:600;color:var(--dim);margin:6px 0}
+/* ---- Campaign Modal & Dialog Styling ---- */
+.dlg-box{padding:24px;display:flex;flex-direction:column;gap:14px;width:100%;box-sizing:border-box}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dlg-head h3{font-size:18px;font-weight:700;color:var(--brand-ink);margin:0}
+.dlg-body{display:flex;flex-direction:column;gap:14px}
+.camp-rates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:6px}
+.camp-rate-box{background:var(--muted);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px}
+.camp-rate-box .label{font-size:11px;color:var(--dim);font-weight:600}
+.camp-rate-box .rate{font-size:13px;font-weight:700;color:var(--text);margin-top:2px}
+.camp-sec{display:flex;flex-direction:column;gap:6px}
+.camp-sec-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.camp-sec-title svg{width:14px;height:14px}
+.camp-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.camp-list li{font-size:13px;line-height:1.45;color:var(--text);position:relative;padding-left:16px}
+.camp-list li::before{content:"•";position:absolute;left:4px;color:var(--brand);font-weight:bold}
+.camp-alert-box{background:var(--bad-soft);border:1px solid rgba(229,50,63,.25);border-radius:var(--r-sm);padding:12px 14px}
+.camp-alert-box .camp-list li::before{color:var(--bad)}
+.camp-guide-box{background:var(--brand-soft);border:1px solid var(--brand-line);border-radius:var(--r-sm);padding:12px 14px}
+.camp-guide-box ol{padding-left:18px;margin:0;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45;color:var(--text)}
+.camp-copy-tags{display:flex;align-items:center;justify-content:space-between;background:var(--muted);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;gap:10px}
+.camp-copy-tags code{font-size:12px;color:var(--brand-ink);font-family:monospace;word-break:break-all}
 
 </style>
 </head>
@@ -2522,106 +2533,32 @@ document.addEventListener("click", async e => {
 
     if (a === "camptab") { S.campTab = d.tab; return drawCampaigns(); }
 
-    if (a === "mcptoken") {
-      const dlg = $("#formdlg");
-      dlg.innerHTML = `<div class="dlg-box" style="max-width:480px">
-        <div class="dlg-head"><h3>Connect Hopvisor Token</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
-        <div class="dlg-body">
-          <p style="font-size:13px;color:var(--dim);margin-bottom:14px">Paste your Hopvisor Bearer token below. This connects your site directly to <code>https://mcp.hopvisor.com/mcp</code> to query live Whop Content Rewards:</p>
-          <label class="f" style="margin-bottom:14px">Hopvisor Token
-            <input id="hopvisor_token_val" placeholder="Paste token here..." autofocus>
-          </label>
-          <div class="dlg-foot">
-            <button class="btn" data-act="tokenguide">How to get token</button>
-            <button class="btn primary" data-act="savetoken">Save & Connect</button>
-          </div>
-        </div>
-      </div>`;
-      dlg.showModal();
-      return;
-    }
-    if (a === "savetoken") {
-      const input = $("#hopvisor_token_val");
-      const tok = input ? input.value.trim() : "";
-      if (!tok) return toast("Please paste your Hopvisor token.", "bad");
-      await send("/api/mcp/hopvisor/token", {token: tok});
-      $("#formdlg").close();
-      toast("Hopvisor MCP Token saved & connected!", "ok");
-      return loadCampaigns();
-    }
-    if (a === "mcpdisconnect") {
-      await send("/api/mcp/hopvisor/disconnect");
-      toast("Hopvisor disconnected.", "ok");
-      return loadCampaigns();
-    }
-    if (a === "tokenguide") {
-      const dlg = $("#formdlg");
-      dlg.innerHTML = `<div class="dlg-box" style="max-width:540px">
-        <div class="dlg-head"><h3>How to Get Your Hopvisor Token</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
-        <div class="dlg-body" style="font-size:13px;line-height:1.6">
-          <p style="margin-bottom:12px">Follow these 3 quick steps to copy your Hopvisor token:</p>
-          <div style="background:var(--muted);padding:14px;border-radius:var(--r-sm);margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
-            <div><b>Step 1:</b> Open <a href="https://hopvisor.com" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600">hopvisor.com</a> in your browser and log in.</div>
-            <div><b>Step 2:</b> Press <kbd style="background:#fff;border:1px solid var(--line);padding:2px 6px;border-radius:4px">F12</kbd> (or right-click anywhere and pick <b>Inspect</b>) to open Developer Tools.</div>
-            <div><b>Step 3:</b> Click the <b>Application</b> tab at top &rarr; expand <b>Local Storage</b> on the left &rarr; click <b>https://hopvisor.com</b>. Look for the key named <code>token</code>, <code>auth_token</code>, or <code>sb-...-auth-token</code>, and copy its value!</div>
-          </div>
-          <p style="color:var(--dim);font-size:12px;margin-bottom:16px"><i>Tip: You can also check the <b>Network</b> tab in Developer Tools, click any request to hopvisor.com, and copy the <code>Authorization: Bearer &lt;token&gt;</code> header.</i></p>
-          <div class="dlg-foot">
-            <button class="btn" data-act="dlgcancel">Close</button>
-            <button class="btn primary" data-act="mcptoken">Paste Token Now</button>
-          </div>
-        </div>
-      </div>`;
-      dlg.showModal();
-      return;
-    }
-    if (a === "whopclip") {
-      const camp = (_whopData || []).find(x => x.id === d.id);
-      if (!camp) return;
-      const dlg = $("#formdlg");
-      dlg.innerHTML = `<div class="dlg-box" style="max-width:500px">
-        <div class="dlg-head"><h3>Make Clips for ${esc(camp.title)}</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
-        <div class="dlg-body">
-          <div style="background:${camp.banner_bg};padding:14px;border-radius:var(--r);color:#fff;margin-bottom:14px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;opacity:.9">WHOP CONTENT REWARDS</div>
-            <div style="font-size:16px;font-weight:700">${esc(camp.title)}</div>
-            <div style="font-size:12px;margin-top:4px">Payout: <b>$${camp.rate_per_1k} per 1k views</b> · Budget: <b>$${Number(camp.budget_left).toLocaleString()}</b> left</div>
-          </div>
-          <label class="f" style="margin-bottom:12px">Link or Stream to Clip
-            <input id="whop_stream_url" value="${esc(camp.whop_url && camp.whop_url !== "https://whop.com" ? camp.whop_url : (camp.streamer ? "https://www.twitch.tv/kaicenat" : ""))}" placeholder="Paste YouTube, Twitch, or Kick stream link">
-          </label>
-          <label class="f" style="margin-bottom:12px">Apply to Streamer / Workspace
-            <select id="whop_cid">
-              <option value="">Create new / Current workspace</option>
-              ${S.creators.map(cr => `<option value="${esc(cr.id)}">${esc(cr.name)}</option>`).join("")}
-            </select>
-          </label>
-          <div style="background:var(--muted);padding:10px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:16px">
-            <div><b>Auto-configured Tags:</b> <code>${esc(camp.tags || "#Whop #WhopRewards")}</code></div>
-            <div style="margin-top:4px"><b>Hook Text:</b> ${esc(camp.hook_text || "WHOP REWARDS")}</div>
-          </div>
-          <div class="dlg-foot">
-            <button class="btn" data-act="dlgcancel">Cancel</button>
-            <button class="btn primary" data-act="whopclipstart" data-id="${esc(camp.id)}">${ic("scissors")} Start Clipping Now</button>
-          </div>
-        </div>
-      </div>`;
-      dlg.showModal();
-      return;
-    }
-    if (a === "whopclipstart") {
-      const streamUrl = $("#whop_stream_url") ? $("#whop_stream_url").value.trim() : "";
-      const cid = $("#whop_cid") ? $("#whop_cid").value : "";
-      const res = await send("/api/mcp/whop/prepare-clip", {campaign_id: d.id, creator_id: cid});
-      $("#formdlg").close();
+    if (a === "campmakeclip") {
+      const camp = (_campData.catalog || []).find(x => x.id === d.id);
+      if ($("#formdlg")?.open) $("#formdlg").close();
       go("overview");
-      const urlInput = $("#url");
-      if (urlInput) {
-        urlInput.value = streamUrl || res.suggested_stream || "https://www.twitch.tv/kaicenat";
-        urlInput.focus();
-        if (typeof onLink === "function") onLink(urlInput);
+      if (camp && (camp.streamer_channel || camp.streamer)) {
+        const urlInput = $("#url");
+        if (urlInput) {
+          urlInput.value = camp.streamer_channel || "";
+          urlInput.focus();
+          if (typeof onLink === "function" && urlInput.value) onLink(urlInput);
+        }
       }
-      toast(`Whop Campaign attached! Rate: $${res.rate_per_1k}/1k views. Ready to clip.`, "ok");
+      toast(`Ready to clip for ${camp ? camp.streamer || camp.title : "campaign"}! Paste a stream link or choose from trending live.`, "ok");
+      return;
+    }
+    if (a === "copytags") {
+      const tags = d.tags || "";
+      if (tags && navigator.clipboard) {
+        navigator.clipboard.writeText(tags).then(() => {
+          toast("Campaign tags copied to clipboard!", "ok");
+        }).catch(() => {
+          toast("Tags: " + tags, "ok");
+        });
+      } else if (tags) {
+        toast("Tags: " + tags, "ok");
+      }
       return;
     }
 
@@ -3020,21 +2957,12 @@ $("#main").addEventListener("scroll", () => $(".topbar").classList.toggle("stuck
 /* ============================================================ Campaigns Marketplace */
 let _campData = { catalog: [], enrolled: [] };
 
-let _mcpStatus = { connected: false, auth_url: "" };
-let _whopData = [];
-
 async function loadCampaigns() {
   try {
     _campData = await api("/api/campaigns");
   } catch (e) {
     console.error("Campaigns load error:", e);
   }
-  try {
-    _mcpStatus = await api("/api/mcp/hopvisor/status");
-  } catch {}
-  try {
-    _whopData = await api("/api/mcp/whop/campaigns");
-  } catch {}
   drawCampaigns();
 }
 
@@ -3065,89 +2993,11 @@ function drawCampaigns() {
     return ic("link");
   }).join("");
 
-  
-  let whopFiltered = _whopData.slice();
-  if (S.whopSearch) {
-    const wq = S.whopSearch.toLowerCase();
-    whopFiltered = whopFiltered.filter(c => (c.title + " " + c.brand + " " + (c.tags || "") + " " + (c.category || "")).toLowerCase().includes(wq));
-  }
-  if (S.whopPlat) whopFiltered = whopFiltered.filter(c => (c.platforms || []).includes(S.whopPlat));
-  if (S.whopMinRate) whopFiltered = whopFiltered.filter(c => (c.rate_per_1k || 0) >= S.whopMinRate);
-
-  const whopContent = `
-    <div class="whop-mcp-banner ${_mcpStatus.connected ? "connected" : ""}">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="whop-badge">WHOP MCP</span>
-        <span>${_mcpStatus.connected ? "Connected to <b>Hopvisor MCP</b> (<code>https://mcp.hopvisor.com/mcp</code>). Live Whop Rewards active." : "Connect your <b>Hopvisor Token</b> to query live Whop campaigns via MCP:"}</span>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        ${_mcpStatus.connected ? `
-          <span class="pill ok">● Connected</span>
-          <button type="button" class="btn sm" data-act="mcpdisconnect">Disconnect</button>
-        ` : `
-          <button type="button" class="btn primary sm" data-act="mcptoken">Set Hopvisor Token</button>
-          <button type="button" class="btn sm" data-act="tokenguide">How to get token</button>
-        `}
-      </div>
-    </div>
+  const content = S.campTab === "find" ? `
     <div class="camp-bar">
       <div class="camp-search">
         ${ic("search")}
-        <input id="whopSearchInput" placeholder="Search Whop campaigns (trading, gaming, AI, podcast, $2/1k)..." value="${esc(S.whopSearch || "")}">
-      </div>
-      <select class="camp-sort" id="whopPlatSelect">
-        <option value=""${!S.whopPlat ? " selected" : ""}>All platforms</option>
-        <option value="tiktok"${S.whopPlat === "tiktok" ? " selected" : ""}>TikTok</option>
-        <option value="youtube"${S.whopPlat === "youtube" ? " selected" : ""}>YouTube Shorts</option>
-        <option value="instagram"${S.whopPlat === "instagram" ? " selected" : ""}>Instagram Reels</option>
-      </select>
-      <select class="camp-sort" id="whopRateSelect">
-        <option value="0"${!S.whopMinRate ? " selected" : ""}>Any payout rate</option>
-        <option value="1.5"${S.whopMinRate === 1.5 ? " selected" : ""}>$1.50+ / 1k views</option>
-        <option value="2.0"${S.whopMinRate === 2.0 ? " selected" : ""}>$2.00+ / 1k views</option>
-        <option value="2.5"${S.whopMinRate === 2.5 ? " selected" : ""}>$2.50+ / 1k views</option>
-      </select>
-    </div>
-    <div class="camp-grid">
-      ${whopFiltered.map(c => `
-        <div class="whop-card">
-          <div class="whop-banner" style="background:${c.banner_bg}">
-            <div class="camp-banner-top">
-              <span class="camp-badge">${esc(c.badge || "Whop Bounty")}</span>
-              <span class="camp-pool-badge">${esc(c.pool_badge || `$${c.rate_per_1k}/1k`)}</span>
-            </div>
-            <div>
-              <div class="camp-banner-text">${esc(c.title)}</div>
-              <div class="camp-banner-sub">${esc(c.brand)} · ${esc(c.category || "Clipping")}</div>
-            </div>
-          </div>
-          <div class="camp-body">
-            <div class="camp-meta-top">
-              <span class="camp-brand"><span class="whop-badge" style="font-size:9px;padding:1px 4px">WHOP</span> ${esc(c.brand)}</span>
-              <span class="camp-budget">$${Number(c.budget_left).toLocaleString()} left of $${Number(c.prize_pool).toLocaleString()}</span>
-            </div>
-            <div class="whop-rates">
-              ${c.rate_tiktok ? `<span>TT: $${c.rate_tiktok}/1k</span>` : ""}
-              ${c.rate_youtube ? `<span>YT: $${c.rate_youtube}/1k</span>` : ""}
-              ${c.rate_instagram ? `<span>IG: $${c.rate_instagram}/1k</span>` : ""}
-            </div>
-            <div style="font-size:12px;color:var(--dim);line-height:1.4">${esc(c.rules || "")}</div>
-            <div class="camp-actions" style="margin-top:10px">
-              <button type="button" class="whop-btn-clip" data-act="whopclip" data-id="${esc(c.id)}">
-                ${ic("scissors")} Make clips from this campaign
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-  `;
-
-  const content = S.campTab === "whop" ? whopContent : S.campTab === "find" ? `
-    <div class="camp-bar">
-      <div class="camp-search">
-        ${ic("search")}
-        <input id="campSearchInput" placeholder="Search campaigns or brands" value="${esc(S.campSearch)}">
+        <input id="campSearchInput" placeholder="Search campaigns, brands, or streamers..." value="${esc(S.campSearch)}">
       </div>
       <select class="camp-sort" id="campSortSelect">
         <option value="popular"${S.campSort === "popular" ? " selected" : ""}>Most popular</option>
@@ -3193,7 +3043,7 @@ function drawCampaigns() {
         <div class="card"><div class="card-head"><div><h2>My Active Campaigns</h2><p class="sub">Clips automatically carry campaign hashtags and payout rates</p></div></div>
         <div class="scroll">
           <table>
-            <tr><th>Campaign</th><th>Linked Streamer</th><th class="num">Rate / 1k</th><th class="num">Clips Made</th><th class="num">Views</th><th class="num">Est. Earnings</th><th></th></tr>
+            <tr><th>Campaign</th><th>Linked Streamer</th><th class="num">Rate / 1k</th><th class="num">Clips Made</th><th class="num">Views</th><th class="num">Est. Earnings</th><th style="text-align:right">Actions</th></tr>
             ${enrolled.map(e => `
               <tr>
                 <td><b>${esc(e.campaign_title || e.campaign_id)}</b></td>
@@ -3202,8 +3052,12 @@ function drawCampaigns() {
                 <td class="num">${e.clips_count || 0}</td>
                 <td class="num">${Number(e.views || 0).toLocaleString()}</td>
                 <td class="num" style="color:var(--good);font-weight:700">$${Number(e.earnings || 0).toFixed(2)}</td>
-                <td style="text-align:right">
-                  <button type="button" class="btn sm" data-act="campunenroll" data-id="${esc(e.campaign_id)}">Leave</button>
+                <td style="text-align:right;white-space:nowrap">
+                  <div style="display:inline-flex;gap:6px;align-items:center">
+                    <button type="button" class="btn sm" data-act="campopen" data-id="${esc(e.campaign_id)}">Open ${ic("upright")}</button>
+                    <button type="button" class="btn primary sm" data-act="campmakeclip" data-id="${esc(e.campaign_id)}">${ic("scissors")} Make clips</button>
+                    <button type="button" class="btn sm" data-act="campunenroll" data-id="${esc(e.campaign_id)}">Leave</button>
+                  </div>
                 </td>
               </tr>
             `).join("")}
@@ -3228,7 +3082,6 @@ function drawCampaigns() {
         </div>
         <div class="camp-tabs">
           <button type="button" class="camp-tab-btn ${S.campTab === "find" ? "on" : ""}" data-act="camptab" data-tab="find">Find campaigns</button>
-          <button type="button" class="camp-tab-btn ${S.campTab === "whop" ? "on" : ""}" data-act="camptab" data-tab="whop"><span class="whop-badge" style="font-size:9px;padding:1px 5px">WHOP</span> Whop Rewards (MCP)</button>
           <button type="button" class="camp-tab-btn ${S.campTab === "my" ? "on" : ""}" data-act="camptab" data-tab="my">My campaigns ${enrolled.length ? `<span class="badge-n">${enrolled.length}</span>` : ""}</button>
         </div>
       </div>
@@ -3254,27 +3107,6 @@ function drawCampaigns() {
       drawCampaigns();
     });
   }
-  const whopSearchInput = $("#whopSearchInput");
-  if (whopSearchInput) {
-    whopSearchInput.addEventListener("input", e => {
-      S.whopSearch = e.target.value;
-      drawCampaigns();
-    });
-  }
-  const whopPlatSelect = $("#whopPlatSelect");
-  if (whopPlatSelect) {
-    whopPlatSelect.addEventListener("change", e => {
-      S.whopPlat = e.target.value;
-      drawCampaigns();
-    });
-  }
-  const whopRateSelect = $("#whopRateSelect");
-  if (whopRateSelect) {
-    whopRateSelect.addEventListener("change", e => {
-      S.whopMinRate = Number(e.target.value) || 0;
-      drawCampaigns();
-    });
-  }
   const sortSelect = $("#campSortSelect");
   if (sortSelect) {
     sortSelect.addEventListener("change", e => {
@@ -3287,27 +3119,96 @@ function drawCampaigns() {
 function openCampaignModal(campId) {
   const c = (_campData.catalog || []).find(x => x.id === campId);
   if (!c) return;
+  const isEnrolled = (_campData.enrolled || []).some(e => e.campaign_id === campId) || c.enrolled;
   const d = $("#formdlg");
-  d.innerHTML = `<div class="dlg-box" style="max-width:520px">
-    <div class="dlg-head"><h3>${esc(c.title)}</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
-    <div class="dlg-body">
-      <div style="background:${c.banner_bg};padding:18px;border-radius:var(--r);color:#fff;margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">${esc(c.badge || "Campaign")}</span>
-          <b style="color:var(--brand)">$${c.rate_per_1k} / 1k views</b>
+
+  const ratesEntries = c.rates ? Object.entries(c.rates) : [];
+  const ratesHtml = ratesEntries.length ? `
+    <div class="camp-sec">
+      <div class="camp-sec-title">${ic("chart")} Platform Payout Rates</div>
+      <div class="camp-rates-grid">
+        ${ratesEntries.map(([plat, rate]) => `
+          <div class="camp-rate-box">
+            <div class="label">${esc(plat)}</div>
+            <div class="rate">${esc(rate)}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>` : "";
+
+  const contentRulesHtml = (c.content_rules && c.content_rules.length) ? `
+    <div class="camp-sec">
+      <div class="camp-sec-title">${ic("check")} Content Requirements & What to Clip</div>
+      <ul class="camp-list">
+        ${c.content_rules.map(r => `<li>${esc(r)}</li>`).join("")}
+      </ul>
+    </div>` : (c.rules ? `<div class="camp-sec"><div class="camp-sec-title">${ic("check")} Content Guidelines</div><p style="font-size:13px;line-height:1.45;color:var(--text);margin:0">${esc(c.rules)}</p></div>` : "");
+
+  const prohibitedHtml = (c.prohibited && c.prohibited.length) ? `
+    <div class="camp-alert-box">
+      <div class="camp-sec-title" style="color:var(--bad)">${ic("warn")} Disqualification & Prohibited Content</div>
+      <ul class="camp-list">
+        ${c.prohibited.map(p => `<li>${esc(p)}</li>`).join("")}
+      </ul>
+    </div>` : "";
+
+  const tagsHtml = c.tags ? `
+    <div class="camp-sec">
+      <div class="camp-sec-title">${ic("link")} Required Hashtags & Mentions</div>
+      <div class="camp-copy-tags">
+        <code>${esc(c.tags)}</code>
+        <button type="button" class="btn sm" data-act="copytags" data-tags="${esc(c.tags)}">${ic("copy")} Copy tags</button>
+      </div>
+    </div>` : "";
+
+  const geoHtml = c.geo_rules ? `
+    <div class="camp-sec" style="font-size:12px;color:var(--dim);line-height:1.5;background:var(--muted);padding:8px 12px;border-radius:var(--r-sm)">
+      <b>Audience & Geo Rules:</b> ${esc(c.geo_rules)}
+    </div>` : "";
+
+  const guideHtml = (c.submission_guide && c.submission_guide.length) ? `
+    <div class="camp-guide-box">
+      <div class="camp-sec-title" style="color:var(--brand-ink);margin-bottom:8px">${ic("play")} How to Submit on Whop & Get Paid</div>
+      <ol>
+        ${c.submission_guide.map(step => `<li>${esc(step.replace(/^\d+\.\s*/, ""))}</li>`).join("")}
+      </ol>
+    </div>` : "";
+
+  d.innerHTML = `<div class="dlg-box" style="max-width:620px;max-height:90vh;overflow-y:auto">
+    <div class="dlg-head">
+      <h3>${esc(c.title)}</h3>
+      <button class="icon-btn" data-act="dlgcancel" aria-label="Close">${ic("x")}</button>
+    </div>
+    <div class="dlg-body" style="padding-top:0">
+      <div style="background:${c.banner_bg || "var(--frame)"};padding:18px;border-radius:var(--r);color:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">${esc(c.badge || "Whop Verified")}</span>
+          <b style="color:#fff;background:var(--brand);padding:2px 8px;border-radius:4px;font-size:13px">$${Number(c.rate_per_1k).toFixed(2)} / 1k views</b>
         </div>
-        <div style="font-size:18px;font-weight:700">${esc(c.brand)}</div>
-        <div style="font-size:13px;opacity:.9">${esc(c.streamer || "")}</div>
+        <div style="font-size:18px;font-weight:700">${esc(c.brand)} ${c.verified ? "✓" : ""}</div>
+        <div style="font-size:13px;opacity:.9">${esc(c.streamer ? c.streamer + " · " : "")}${esc(c.category || "")}</div>
       </div>
-      <p style="margin-bottom:12px;font-size:13px;line-height:1.5">${esc(c.rules || "")}</p>
-      <div style="background:var(--muted);padding:12px;border-radius:var(--r-sm);font-size:12px;color:var(--dim);margin-bottom:14px">
-        <div><b>Tags:</b> <code>${esc(c.tags || "")}</code></div>
-        <div style="margin-top:4px"><b>Budget remaining:</b> $${Number(c.budget_left).toLocaleString()} of $${Number(c.prize_pool).toLocaleString()}</div>
-        <div style="margin-top:4px"><b>Campaign ends in:</b> ${esc(c.ends_in || "Active")}</div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;background:var(--muted);padding:10px 14px;border-radius:var(--r-sm);font-size:12px">
+        <div><span style="color:var(--dim)">Prize Pool:</span><br><b>$${Number(c.prize_pool).toLocaleString()}</b></div>
+        <div><span style="color:var(--dim)">Remaining:</span><br><b>$${Number(c.budget_left).toLocaleString()}</b></div>
+        <div><span style="color:var(--dim)">Min Views:</span><br><b>${Number(c.min_views || 1000).toLocaleString()}</b></div>
+        <div><span style="color:var(--dim)">Ends In:</span><br><b>${esc(c.ends_in || "Active")}</b></div>
       </div>
-      <div class="dlg-foot">
+
+      ${ratesHtml}
+      ${contentRulesHtml}
+      ${prohibitedHtml}
+      ${tagsHtml}
+      ${geoHtml}
+      ${guideHtml}
+
+      <div class="dlg-foot" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
         <button class="btn" data-act="dlgcancel">Close</button>
-        <button class="btn primary" data-act="campadd" data-id="${esc(c.id)}">+ Add to my campaigns</button>
+        ${c.whop_url ? `<a href="${esc(c.whop_url)}" target="_blank" rel="noopener" class="btn" style="text-decoration:none">View on Whop ${ic("upright")}</a>` : ""}
+        <button class="btn primary" data-act="campmakeclip" data-id="${esc(c.id)}">${ic("scissors")} Make clips for this campaign</button>
+        ${isEnrolled ? `<button class="btn" disabled style="background:var(--good-soft);color:var(--good);border:0">${ic("check")} Enrolled</button>`
+          : `<button class="btn" data-act="campadd" data-id="${esc(c.id)}">${ic("plus")} Add to my campaigns</button>`}
       </div>
     </div>
   </div>`;
@@ -3319,9 +3220,9 @@ function openEnrollModal(campId) {
   if (!c) return;
   const d = $("#formdlg");
   d.innerHTML = `<div class="dlg-box" style="max-width:480px">
-    <div class="dlg-head"><h3>Add Campaign to Streamer</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+    <div class="dlg-head"><h3>Add Campaign to Streamer</h3><button class="icon-btn" data-act="dlgcancel" aria-label="Close">${ic("x")}</button></div>
     <div class="dlg-body">
-      <p style="font-size:13px;color:var(--dim);margin-bottom:14px">Link <b>${esc(c.title)}</b> to one of your streamers. Clips generated will automatically include the campaign tag and track view earnings at <b>$${c.rate_per_1k} / 1k views</b>.</p>
+      <p style="font-size:13px;color:var(--dim);margin-bottom:14px">Link <b>${esc(c.title)}</b> to one of your streamers. Clips generated will automatically include the campaign tag and track view earnings at <b>$${Number(c.rate_per_1k).toFixed(2)} / 1k views</b>.</p>
       <label class="f" style="margin-bottom:12px">Choose Streamer
         <select id="enroll_cid">
           <option value="">Apply to all streamers</option>
@@ -3329,8 +3230,8 @@ function openEnrollModal(campId) {
         </select>
       </label>
       <div style="background:var(--muted);padding:10px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:16px">
-        <div><b>Auto-added tags:</b> ${esc(c.tags)}</div>
-        <div style="margin-top:2px"><b>Rate:</b> $${c.rate_per_1k} per 1,000 views</div>
+        <div><b>Auto-added tags:</b> <code>${esc(c.tags)}</code></div>
+        <div style="margin-top:4px"><b>Rate:</b> $${Number(c.rate_per_1k).toFixed(2)} per 1,000 views</div>
       </div>
       <div class="dlg-foot">
         <button class="btn" data-act="dlgcancel">Cancel</button>

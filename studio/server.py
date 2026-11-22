@@ -25,7 +25,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 
 from . import admin as admins
 from . import account, load
-from . import (accounts, ai, alerts, auth, brain, campaigns, config, creators, ctx, db, jobs, live, mcp_hopvisor, media, posting,
+from . import (accounts, ai, alerts, auth, brain, campaigns, config, creators, ctx, db, jobs, live, media, posting,
                profiles, render, safe, transcribe, usage)
 
 from . import tools as _tools  # noqa: E402
@@ -1809,55 +1809,6 @@ def unenroll_campaign(body: dict = Body(...)):
 @app.get("/api/trending")
 def list_trending():
     return campaigns.get_trending()
-
-
-@app.get("/api/mcp/hopvisor/status")
-def mcp_hopvisor_status():
-    return mcp_hopvisor.get_status()
-
-
-@app.post("/api/mcp/hopvisor/token")
-def mcp_hopvisor_set_token(body: dict = Body(...)):
-    token = str(body.get("token") or "").strip()
-    return mcp_hopvisor.set_token(token)
-
-
-@app.post("/api/mcp/hopvisor/disconnect")
-def mcp_hopvisor_disconnect():
-    return {"ok": mcp_hopvisor.disconnect()}
-
-
-@app.get("/api/mcp/oauth/callback")
-def mcp_oauth_callback(code: str = "", error: str = ""):
-    if error or not code:
-        return HTMLResponse(
-            "<html><body><script>alert('Hopvisor authorization was cancelled or failed.'); window.close();</script></body></html>"
-        )
-    redirect_uri = f"{config.PUBLIC_URL.rstrip('/')}/api/mcp/oauth/callback"
-    ok = mcp_hopvisor.exchange_code(code, redirect_uri)
-    msg = "Hopvisor MCP connected successfully!" if ok else "Failed to exchange token with Hopvisor."
-    return HTMLResponse(
-        f"<html><head><title>Hopvisor Connected</title></head><body style='font-family:system-ui;padding:40px;text-align:center'>"
-        f"<h3>{msg}</h3><p>You can close this tab and return to PeakCut.</p>"
-        f"<script>try{{if(window.opener){{window.opener.location.reload();}}}}catch(e){{}} setTimeout(()=>window.close(), 1500);</script></body></html>"
-    )
-
-
-@app.get("/api/mcp/whop/campaigns")
-def mcp_whop_campaigns(q: str = "", platform: str = "", min_rate: float = 0.0):
-    return mcp_hopvisor.search_whop_campaigns(query=q, platform=platform, min_rate=min_rate)
-
-
-@app.post("/api/mcp/whop/prepare-clip")
-def mcp_whop_prepare_clip(body: dict = Body(...)):
-    camp_id = str(body.get("campaign_id") or "").strip()
-    creator_id = str(body.get("creator_id") or "").strip()
-    if not camp_id:
-        raise HTTPException(400, "Campaign ID required")
-    try:
-        return mcp_hopvisor.prepare_whop_clipping(camp_id, creator_id)
-    except KeyError as e:
-        raise HTTPException(404, str(e))
 
 
 def main():
