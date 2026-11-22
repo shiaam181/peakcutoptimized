@@ -360,6 +360,8 @@ The clips are being produced for a specific bounty / brand campaign. You MUST st
 {_safe(campaign, 1500)}
 \"\"\"
 MANDATORY SELECTION RULES:
+- QUALITY OVER QUANTITY: Select ONLY top-tier viral moments (score 85-100). Reject dull filler or quiet gameplay.
+- STREAMER FACE REACTION IS ESSENTIAL: Viewers watch for the creator's face, wild facial expressions, screaming, explosive laughter, rage, and shock. Moments with prominent creator reactions are required.
 - ONLY pick moments where the topic, conversation, and action strictly match this campaign brief.
 - If a moment does not relate directly to this campaign, REJECT IT, even if high-energy.
 - The hook, title, and description MUST align with the campaign narrative and mandatory subjects.

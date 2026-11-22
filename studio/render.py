@@ -244,6 +244,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 PIP_W = 380            # how wide the facecam is in the 1080-wide frame
 PIP_MARGIN = 26
+_FACECAM_CACHE: dict[str, dict] = {}
 
 def _hook_y(layout, hook_y, facecam=None):
     """Where the heading goes. In the gameplay layout the webcam sits in the top corner, so a heading
@@ -317,7 +318,14 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
         try:
             from . import director
             if req_layout in ("facecam", "facecam_game_top", "auto"):
-                cam = director.detect_facecam(src, dur, src_w, src_h)
+                src_key = str(src)
+                cam = _FACECAM_CACHE.get(src_key)
+                if not cam:
+                    cam = director.detect_facecam(src, start=start, duration=dur, src_w=src_w, src_h=src_h)
+                    if not cam:
+                        cam = director.detect_facecam(src, start=0.0, duration=max(60.0, dur * 2), src_w=src_w, src_h=src_h)
+                    if cam:
+                        _FACECAM_CACHE[src_key] = cam
                 if cam:
                     reaction_top = (req_layout != "facecam_game_top")
                     custom_filter, cap_y, hook_y = director.build_facecam_filter(cam, src_w, src_h, config.OUT_FPS, reaction_top=reaction_top)

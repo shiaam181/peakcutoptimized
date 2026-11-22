@@ -102,11 +102,14 @@ def _detect_circle_cam(frames, cx_px, cy_px, fh_px, src_w, src_h):
     return [float(v) for v in np.median(np.array(found), axis=0)]
 
 
-def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
+def detect_facecam(video_path, start: float = 0.0, duration: float = 30.0, src_w: int = 1920, src_h: int = 1080):
     """Detects webcam overlay (facecam) on live streams or gameplay recordings.
     Returns {'x', 'y', 'w', 'h', 'shape': 'rect'|'circle'} in pixels, or None.
     """
-    frames = _sample_frames(video_path, 0.0, duration, n=24)
+    frames = _sample_frames(video_path, start, max(1.0, duration), n=24)
+    if len(frames) < 6 and start > 0:
+        # Fallback: sample from the start of the video if this segment had poor seek
+        frames = _sample_frames(video_path, 0.0, max(30.0, duration), n=24)
     if len(frames) < 6:
         return None
 
@@ -117,7 +120,7 @@ def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
         px_faces = [(d[0] * src_w, d[1] * src_h, d[3] * src_h) for d in det]
         per_frame.append(px_faces)
 
-    tol = 0.08 * src_w
+    tol = 0.10 * src_w
     best_c, best_hits = None, []
 
     for faces in per_frame:
@@ -130,14 +133,14 @@ def detect_facecam(video_path, duration: float, src_w: int, src_h: int):
             if len(hits) > len(best_hits):
                 best_c, best_hits = c, hits
 
-    if not best_c or len(best_hits) < max(3, int(0.20 * len(frames))):
+    if not best_c or len(best_hits) < max(2, int(0.12 * len(frames))):
         return None
 
     cx, cy, fh = (float(v) for v in np.median(np.array([h[1] for h in best_hits]), axis=0))
 
     # A webcam overlay is positioned towards an edge (left or right side, or bottom corner)
     # A centered presenter taking up the middle upper screen is a regular talking head, not a facecam
-    if fh > 0.38 * src_h or (0.35 * src_w < cx < 0.65 * src_w and cy < 0.52 * src_h):
+    if fh > 0.45 * src_h or (0.35 * src_w < cx < 0.65 * src_w and cy < 0.48 * src_h):
         return None
 
     circle = _detect_circle_cam([frames[i] for i, _ in best_hits], cx, cy, fh, src_w, src_h)

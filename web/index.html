@@ -2428,8 +2428,12 @@ function drawClipDlg(full) {
         <h3>Post text</h3>
         <label class="f">Title<input data-f="title" value="${esc(c.title)}"></label>
         <label class="f">Description<textarea data-f="description" rows="2">${esc(c.description)}</textarea></label>
-        <label class="f">Hashtags (viral discoverability)<input data-f="hashtags" value="${esc((c.hashtags || []).map(h => h.startsWith('#') ? h : '#' + h).join(' '))}" placeholder="#Shorts #viral #trending #fyp"></label>
-        <div style="font-size:12px;color:var(--ink-mid);margin:-6px 0 10px 0">💡 Algorithm tip: YouTube Shorts & Instagram Reels use hashtags to push your clip to the right audience.</div>
+        <label class="f">Hashtags (viral discoverability & campaign payout)<input data-f="hashtags" value="${esc((c.hashtags || []).map(h => h.startsWith('#') ? h : '#' + h).join(' '))}" placeholder="#Shorts #viral #trending #fyp"></label>
+        ${(c.req_tags || (jobOf(D.jid)?.creator && S.creators.find(cr => cr.id === jobOf(D.jid).creator)?.post_footer)) ? `
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--good);background:var(--good-soft);padding:6px 10px;border-radius:var(--r-sm);margin:-6px 0 10px 0;font-weight:600">
+            ${ic("check")} Mandatory Campaign Tags verified & attached for view tracking
+          </div>
+        ` : `<div style="font-size:12px;color:var(--dim);margin:-6px 0 10px 0">💡 Algorithm tip: YouTube Shorts & Instagram Reels use hashtags to push your clip to the right audience.</div>`}
         <button class="btn" data-act="remake">${ic("scissors")}Save and re-make clip</button>
         <h3>Post it</h3>
         <div id="dposts" class="row" style="gap:4px"></div>

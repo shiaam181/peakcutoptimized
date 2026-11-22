@@ -329,7 +329,8 @@ def create(source: dict, options: dict, enqueue=True, creator=None, kind="video"
         d = creators.root(c["id"]) / ("live" if kind == "live" else "videos") / jid
         base = {**DEFAULTS, **{k: c[k] for k in ("max_clips", "min_len", "max_len", "style", "layout", "captions", "lang") if k in c},
                 "hook_text": creators.clean_hook(c.get("hook_text")),
-                "description_text": creators.clean_description(c.get("description_text"))}
+                "description_text": creators.clean_description(c.get("description_text")),
+                "req_tags": c.get("post_footer") or ""}
     else:
         d, base, creator = config.user_dir(ctx.uid()) / "jobs" / jid, dict(DEFAULTS), None
     d.mkdir(parents=True)
@@ -830,6 +831,7 @@ def _run_job(job):
         model = ai.get("model") or model
         if ai.get("note"):
             notes.append(ai["note"])
+        found.sort(key=lambda x: x.get("score", 0), reverse=True)
         for c in found:
             s, e = round(c["start"] + shift, 2), round(c["end"] + shift, 2)
             if static and quality.static_overlap(s, e, static) > 2.0:
@@ -843,6 +845,20 @@ def _run_job(job):
                 c["description"], c["fixed_description"] = o["description_text"], True
             else:                          # no description of their own: 3 to 5 fitting hashtags go at the end of the AI's
                 hashtags.apply(c, words, job["title"], job["uploader"], game)
+
+            # Ensure mandatory campaign hashtags are always present on the clip
+            camp_tags_str = o.get("req_tags") or ""
+            if not camp_tags_str and job.get("creator"):
+                cr = creators.get(job["creator"]) or {}
+                camp_tags_str = cr.get("post_footer") or ""
+            if camp_tags_str:
+                camp_tags_list = [t.lstrip("#") for t in camp_tags_str.split() if t.strip()]
+                existing = [t.lstrip("#") for t in c.get("hashtags", [])]
+                for ct in camp_tags_list:
+                    if ct.lower() not in [x.lower() for x in existing]:
+                        existing.append(ct)
+                c["hashtags"] = existing
+                c["req_tags"] = camp_tags_str
             # Only the gameplay layout uses a webcam, so it is only looked for then, and only once: a
             # stream with no webcam is not looked for again on every clip of it.
             if o["layout"] == "gameplay" and face is False:
