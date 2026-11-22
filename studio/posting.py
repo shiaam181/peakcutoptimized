@@ -215,7 +215,7 @@ def _stats():
         for uid in {p.get("user") for p in _posts if p.get("user")}:
             try:
                 with ctx.as_user(uid):
-                    _stats_for([p for p in _mine() if p["status"] == "posted" and time.time() - p["posted_at"] < 14 * 86400])
+                    _stats_for([p for p in _mine() if p["status"] == "posted" and time.time() - (p.get("posted_at") or p.get("due_at") or 0) < 14 * 86400])
             except Exception:  # noqa: BLE001
                 pass
         _save()
@@ -257,13 +257,13 @@ def overview() -> dict:
             "state": "recording" if live.active_for(c["id"]) else "waiting" if c["auto_watch"] and c["channel"] else "idle",
             "autopost": c["autopost"] and bool(c["accounts"]),
             "clips_today": sum(1 for k in clips if _day(k.get("made_at", 0)) == today), "clips_total": len(clips),
-            "posted_today": sum(1 for p in ps if p["status"] == "posted" and _day(p["posted_at"]) == today),
+            "posted_today": sum(1 for p in ps if p["status"] == "posted" and _day(p.get("posted_at") or p.get("due_at") or 0) == today),
             "posted_total": sum(1 for p in ps if p["status"] == "posted"),
             "queued": sum(1 for p in ps if p["status"] in OPEN), "failed": sum(1 for p in ps if p["status"] == "failed"),
             "views": views, "earnings": round(views / 1000 * c["rate_per_1k"], 2)})
     names = {c["id"]: c["name"] for c in all_cs}
-    queue = sorted((p for p in _posts if p["status"] in OPEN), key=lambda p: p["due_at"])
-    done = sorted((p for p in _posts if p["status"] in ("posted", "failed")), key=lambda p: -(p.get("posted_at") or p["due_at"]))[:15]
+    queue = sorted((p for p in _posts if p["status"] in OPEN), key=lambda p: p.get("due_at", 0))
+    done = sorted((p for p in _posts if p["status"] in ("posted", "failed")), key=lambda p: -(p.get("posted_at") or p.get("due_at", 0)))[:15]
     show = [{**{k: v for k, v in p.items() if k != "user"}, "creator_name": names.get(p["creator"], "")} for p in queue + done]
     # last 14 days, oldest first, for the home graph
     days = [_day(time.time() - 86400 * i) for i in range(13, -1, -1)]
@@ -274,9 +274,11 @@ def overview() -> dict:
             if k.get("status") == "done" and d in made:
                 made[d] += 1
     for p in _posts:
-        if p["status"] == "posted" and _day(p["posted_at"]) in posted:
-            posted[_day(p["posted_at"])] += 1
-            views[_day(p["posted_at"])] += p["views"] or 0
+        if p["status"] == "posted":
+            p_day = _day(p.get("posted_at") or p.get("due_at") or time.time())
+            if p_day in posted:
+                posted[p_day] += 1
+                views[p_day] += p.get("views") or 0
     daily = [{"day": d, "clips": made[d], "posted": posted[d], "views": views[d]} for d in days]
     return {"paused": accounts.settings()["paused"], "creators": rows, "posts": show, "daily": daily,
             "alerts": alerts.configured(), "recording": len(live.active_mine())}
