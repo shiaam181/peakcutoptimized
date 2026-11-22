@@ -125,7 +125,7 @@ def _read_user_mcp() -> dict:
             return json.loads(f.read_text(encoding="utf-8"))
         except Exception:
             pass
-    return {"connected": False, "token": "", "client_id": "cgIJP9lRRJqPZprk", "client_secret": "9GAtsO0GOiXkDkbrnsoiFVxgunchxUbL"}
+    return {"connected": False, "token": "", "client_id": "aqsp5l-OUqvpk4GL", "client_secret": "rtra4KTZyMa0Y9O_-HG_A6CbYyUlB9RH"}
 
 
 def _save_user_mcp(data: dict):
@@ -138,7 +138,7 @@ def get_status() -> dict:
     """Returns Hopvisor MCP connection status and authorization URL."""
     state = _read_user_mcp()
     redirect_uri = f"{config.PUBLIC_URL.rstrip('/')}/api/mcp/oauth/callback"
-    client_id = state.get("client_id", "cgIJP9lRRJqPZprk")
+    client_id = state.get("client_id", "aqsp5l-OUqvpk4GL")
     auth_url = f"{AUTHORIZE_URL}?response_type=code&client_id={urllib.parse.quote(client_id)}&redirect_uri={urllib.parse.quote(redirect_uri)}"
     return {
         "connected": bool(state.get("token") or state.get("connected")),
@@ -162,8 +162,8 @@ def set_token(token: str) -> dict:
 def exchange_code(code: str, redirect_uri: str) -> bool:
     """Exchanges authorization code for an OAuth access token with Hopvisor."""
     state = _read_user_mcp()
-    client_id = state.get("client_id", "cgIJP9lRRJqPZprk")
-    client_secret = state.get("client_secret", "9GAtsO0GOiXkDkbrnsoiFVxgunchxUbL")
+    client_id = state.get("client_id", "aqsp5l-OUqvpk4GL")
+    client_secret = state.get("client_secret", "rtra4KTZyMa0Y9O_-HG_A6CbYyUlB9RH")
 
     data = urllib.parse.urlencode({
         "grant_type": "authorization_code",
