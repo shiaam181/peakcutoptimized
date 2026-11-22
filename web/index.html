@@ -815,6 +815,87 @@ dialog[open]{animation:fadein .16s ease}
   .set-sec h2{font-size:16px}
   .ai-big{font-size:24px}
 }
+
+/* ---- Campaigns & Stepper ---- */
+.camp-wrap{max-width:1160px;margin:0 auto;padding-bottom:60px}
+.camp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.camp-head h1{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.camp-tabs{display:inline-flex;background:var(--frame-2);border-radius:999px;padding:3px;gap:3px}
+.camp-tab-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--frame-dim);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease}
+.camp-tab-btn:hover{color:var(--frame-text)}
+.camp-tab-btn.on{background:var(--brand);color:#fff}
+.camp-tab-btn .badge-n{font-size:10px;background:rgba(255,255,255,.25);padding:1px 6px;border-radius:999px}
+
+.camp-stepper{display:flex;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 20px;margin-bottom:20px;gap:12px;overflow-x:auto}
+.camp-step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);white-space:nowrap}
+.camp-step.on{color:var(--text);font-weight:600}
+.camp-step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:var(--muted);color:var(--dim);font-size:11px;font-weight:700}
+.camp-step.on .camp-step-num{background:var(--brand);color:#fff}
+.camp-step-sub{color:var(--brand);font-size:11px;font-weight:600;margin-left:4px}
+.camp-step-sep{flex:1;min-width:16px;height:1px;background:var(--line)}
+
+.camp-bar{display:flex;gap:12px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+.camp-search{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 14px;height:42px}
+.camp-search svg{width:16px;height:16px;color:var(--dim);flex-shrink:0}
+.camp-search input{flex:1;border:0;background:transparent;font-size:13px;outline:none;color:var(--text)}
+.camp-sort{height:42px;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;font-size:13px;color:var(--dim);outline:none;cursor:pointer}
+
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+.camp-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s ease}
+.camp-card:hover{border-color:var(--brand-line)}
+.camp-banner{position:relative;height:130px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.camp-banner-top{display:flex;justify-content:space-between;align-items:center}
+.camp-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);color:#fff}
+.camp-pool-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--brand);color:#fff}
+.camp-banner-text{font-size:18px;font-weight:800;letter-spacing:-.01em;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.camp-banner-sub{font-size:12px;opacity:.9;font-weight:500}
+
+.camp-body{padding:16px;flex:1;display:flex;flex-direction:column;gap:10px}
+.camp-meta-top{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.camp-brand{color:var(--dim);font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.camp-brand .ver{color:var(--brand);font-weight:700}
+.camp-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:2px}
+.camp-budget{font-size:12px;color:var(--dim);font-weight:600}
+.camp-platforms{display:flex;gap:6px;align-items:center}
+.camp-platforms svg{width:14px;height:14px;color:var(--dim)}
+
+.camp-actions{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.camp-btn-open{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--dim);padding:8px 12px;background:transparent;border:0;cursor:pointer;border-radius:var(--r-sm)}
+.camp-btn-open:hover{color:var(--text);background:var(--muted)}
+.camp-btn-add{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#fff;background:var(--brand);padding:8px 14px;border:0;border-radius:var(--r-sm);cursor:pointer;transition:background-color .15s ease}
+.camp-btn-add:hover{background:var(--brand-press)}
+.camp-btn-add.enrolled{background:var(--good-soft);color:var(--good);cursor:default}
+
+/* ---- Home Overview & Trending Live ---- */
+.ov-top-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.ov-top-bar h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ov-top-actions{display:flex;gap:8px}
+
+.trending-live-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:20px}
+.trending-live-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.trending-title{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text)}
+.dot-live{width:8px;height:8px;border-radius:999px;background:var(--live);box-shadow:0 0 0 3px rgba(229,50,63,.2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.trending-tabs{display:flex;gap:6px;overflow-x:auto}
+.t-pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--dim);cursor:pointer;white-space:nowrap}
+.t-pill:hover{border-color:var(--brand-line);color:var(--text)}
+.t-pill.on{background:var(--frame);border-color:var(--frame);color:#fff}
+
+.trending-player-wrap{position:relative;width:100%;aspect-ratio:16/9;max-height:480px;background:#000}
+.trending-player-wrap iframe{width:100%;height:100%;border:0}
+.trending-info-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;flex-wrap:wrap}
+.t-streamer-meta{display:flex;align-items:center;gap:12px}
+.t-avatar{width:42px;height:42px;border-radius:999px;object-fit:cover;border:2px solid var(--line)}
+.t-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px}
+.t-name .verified{color:#9146FF;font-weight:800}
+.t-title{font-size:13px;font-weight:500;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px}
+.t-sub{font-size:12px;color:var(--faint)}
+.t-actions{display:flex;gap:8px;align-items:center}
+.btn-follow{background:#9146FF;color:#fff;border:0;height:34px;padding:0 12px;border-radius:var(--r-sm);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn-follow:hover{background:#772ce8}
+.btn-gift{background:var(--muted);color:var(--dim);border:1px solid var(--line);height:34px;padding:0 12px;border-radius:var(--r-sm);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn-gift:hover{background:var(--line);color:var(--text)}
+
 </style>
 </head>
 <body>
@@ -848,6 +929,13 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const I = {
+ "tag": '<path fill="currentColor" d="M243.31,136,144,36.69A23.86,23.86,0,0,0,127,29.66H40a16,16,0,0,0-16,16v87a24,24,0,0,0,7,17l99.32,99.31a24,24,0,0,0,33.94,0l79.05-79.05a24,24,0,0,0,0-33.92ZM84,88a16,16,0,1,1,16-16A16,16,0,0,1,84,88Z"/>',
+ "search": '<path fill="currentColor" d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/>',
+ "gift": '<path fill="currentColor" d="M216,72H180.92A40,40,0,0,0,128,51.51,40,40,0,0,0,75.08,72H40A16,16,0,0,0,24,88v32a16,16,0,0,0,16,16v64a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V136a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72ZM120,40a24,24,0,0,1,24,24H96A24,24,0,0,1,120,40Zm40,24a24,24,0,0,1-24-24,24,24,0,0,1,24,24ZM40,88h80v32H40Zm16,48h64v64H56Zm144,64H136V136h64Zm16-80H136V88h80Z"/>',
+ "heart": '<path fill="currentColor" d="M240,98a57.63,57.63,0,0,1-17,41L133.6,228.4a8,8,0,0,1-11.2,0L33,139a58,58,0,0,1,82-82l13,13,13-13a58,58,0,0,1,99,41Z"/>',
+ "twitter": '<path fill="currentColor" d="M182.42,26,110.15,119.8,48,26H14l80.5,120.3L15,230h34.3l74.3-96.6,64.4,96.6H222l-83.3-124.6L216.7,26h-34.28Z"/>',
+ "tiktok": '<path fill="currentColor" d="M224,72a48.05,48.05,0,0,1-36.8-17.2A8,8,0,0,0,173.6,60a48.06,48.06,0,0,1-13.6,32.32V160a64,64,0,1,1-75.12-63.12,8,8,0,0,1,9.52,7.84v25.28a8,8,0,0,1-6.72,7.92,32,32,0,1,0,32.32,32.08V24a8,8,0,0,1,8-8h32a8,8,0,0,1,8,8,48.05,48.05,0,0,0,48,48,8,8,0,0,1,8,8v16A8,8,0,0,1,224,72Z"/>',
+
  "github": "<path fill-rule=\"evenodd\" transform=\"scale(16)\" d=\"M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z\"/>",
  "instagram": "<rect x=\"32\" y=\"32\" width=\"192\" height=\"192\" rx=\"56\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"18\"/><circle cx=\"128\" cy=\"128\" r=\"42\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"18\"/><circle cx=\"184\" cy=\"72\" r=\"13\"/>",
  "chat": "<path d=\"M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Zm12-88a12,12,0,1,1-12-12A12,12,0,0,1,140,128Zm-44,0a12,12,0,1,1-12-12A12,12,0,0,1,96,128Zm88,0a12,12,0,1,1-12-12A12,12,0,0,1,184,128Z\"/>",
@@ -1255,6 +1343,7 @@ function drawShell() {  const nav = (v, icon, label, extra = "") => `<button cla
   put($("#nav"), nav("overview", navIc("home", "overview"), "Home") +
     nav("library", navIc("film", "library"), "All videos", (() => { const w = S.jobs.filter(j => ["queued", "running"].includes(j.status)).length;
       return w ? `<span class="working" title="${w} working now"><i></i>${w} working</span>` : S.jobs.length ? `<span class="count">${S.jobs.length}</span>` : ""; })()) +
+    nav("campaigns", ic("tag"), "Campaigns") +
     `<h4><span>Creators</span></h4>` +
     S.creators.map(c => nav("c:" + c.id, cav(c), c.name,
       c.live_job ? `<span class="sb-tag rec" title="Recording now"><i></i>Rec</span>`
@@ -1339,6 +1428,7 @@ function go(v, tab, fromHistory) {
   $("#heroSlot").innerHTML = v === "overview" ? `<section class="hero"><div class="ga-bg" id="appAscii" aria-hidden="true"></div><h2>What do you want to clip today?</h2>
       <p>Paste a link or drop in videos. You get captioned shorts back.</p><div id="add"></div></section>` : "";
   if (v === "overview") view.innerHTML = `<div id="ov"></div>`;
+  else if (v === "campaigns") { view.innerHTML = `<div id="campSlot"></div>`; loadCampaigns(); }
   else if (v === "library") view.innerHTML = `<div id="add"></div><div id="jobs"></div>`;
   else if (v === "settings") view.innerHTML = `<div id="sform"></div>`;
   else if (v === "usage") { view.innerHTML = `<div id="usage"></div>`; loadUsage(); }
@@ -1967,12 +2057,53 @@ function nextSteps(o) {
 }
 function drawOverview() {
   const o = S.overview, box = $("#ov"); if (!o || !box) return;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const numStreamers = S.creators.length;
+  const streamersText = `${numStreamers} streamer${numStreamers === 1 ? "" : "s"}`;
+  const trendStreams = S.trending || [
+    {channel:"ludwig", name:"Ludwig", title:"DAY 2 NON-LETHAL GTA VI RUN [DROPS ON] !discord", game:"Grand Theft Auto VI", viewers:4110, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/104a32ec-3d92-4299-8cfb-6f81a1795c6f-profile_image-300x300.png"},
+    {channel:"kaicenat", name:"Kai Cenat", title:"GTA 6 MARATHON DAY 1 | SPECIAL GUEST", game:"Grand Theft Auto VI", viewers:84250, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/5be023b1-2dd4-4fa9-b88e-670dc951d8d1-profile_image-300x300.png"},
+    {channel:"caseoh_", name:"CaseOh", title:"SCARIEST GAMES ON STEAM", game:"Horror Games", viewers:51200, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/8b049d53-a550-48e0-a7d1-e63d41f391a0-profile_image-300x300.png"},
+    {channel:"jynxzi", name:"Jynxzi", title:"1V1 TOURNAMENT FOR $10,000", game:"Tom Clancy's Rainbow Six Siege", viewers:43900, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/d0ef5585-cdfa-47cb-a50e-5d15ca3ff8be-profile_image-300x300.png"},
+    {channel:"xqc", name:"xQc", title:"DAILY GAMING / TIKTOK REACTS", game:"Just Chatting", viewers:36700, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/xqc-profile_image-92d06b720f04e1ab-300x300.jpeg"}
+  ];
+  S.trendPick = S.trendPick || trendStreams[0].channel;
+  const curTrend = trendStreams.find(s => s.channel === S.trendPick) || trendStreams[0];
+  const trendHtml = `<div class="ov-top-bar"><div><h1>Home</h1><p class="sub">${greeting}, ${streamersText}.</p></div>
+    <div class="ov-top-actions"><button type="button" class="chip" data-act="focusadd">${ic("link")}Paste link</button><button type="button" class="chip" data-act="pickfile">${ic("up")}Upload</button></div></div>
+  <div class="trending-live-card">
+    <div class="trending-live-head">
+      <div class="trending-title"><span class="dot-live"></span><b>Trending live now</b></div>
+      <div class="trending-tabs">
+        ${trendStreams.map(s => `<button type="button" class="t-pill ${S.trendPick === s.channel ? "on" : ""}" data-act="picktrend" data-ch="${esc(s.channel)}">${esc(s.name)}</button>`).join("")}
+      </div>
+    </div>
+    <div class="trending-player-wrap">
+      <iframe src="${playerSrc("twitch", curTrend.channel)}" allowfullscreen="true" scrolling="no"></iframe>
+    </div>
+    <div class="trending-info-bar">
+      <div class="t-streamer-meta">
+        <img class="t-avatar" src="${curTrend.avatar}" alt="${esc(curTrend.name)}" onerror="this.src='/brand/favicon.svg'">
+        <div>
+          <div class="t-name"><b>${esc(curTrend.name)}</b> <span class="verified">✓</span></div>
+          <div class="t-title">${esc(curTrend.title)}</div>
+          <div class="t-sub">${esc(curTrend.game)} · <span class="t-viewers">${(curTrend.viewers).toLocaleString()} viewers</span></div>
+        </div>
+      </div>
+      <div class="t-actions">
+        <button type="button" class="btn-follow" data-act="trendfollow" data-ch="${esc(curTrend.channel)}">${ic("heart")}Follow</button>
+        <button type="button" class="btn-gift" data-act="trendgift">${ic("gift")}Gift a Sub</button>
+        <button type="button" class="btn primary" data-act="clipstream" data-ch="${esc(curTrend.channel)}" data-name="${esc(curTrend.name)}">${ic("scissors")}Clip this stream</button>
+      </div>
+    </div>
+  </div>`;
   const sum = k => o.creators.reduce((a, r) => a + r[k], 0);
   const d14 = k => (o.daily || []).reduce((a, d) => a + d[k], 0);
   const state = r => r.state === "recording" ? `<span class="pill live"><span class="dot"></span>Recording</span>` : r.state === "waiting" ? `<span class="pill warn">Waiting for live</span>` : `<span class="pill">Idle</span>`;
   const pst = p => p.status === "posted" ? `<span class="pill ok">Posted</span>` : p.status === "failed" ? `<span class="pill bad">Failed</span>` : p.status === "posting" ? `<span class="pill warn">Posting now</span>` : `<span class="pill warn">${clock(p.due_at)}</span>`;
   const steps = nextSteps(o);
-  put(box, `<div class="tiles">
+  put(box, trendHtml + `<div class="tiles">
       <div class="tile"><i>${ic("radio")}</i><b>${o.recording}</b><span>Recording now</span></div>
       <div class="tile"><i>${ic("scissors")}</i><b>${sum("clips_today")}</b><span>Clips today</span></div>
       <div class="tile"><i>${ic("send")}</i><b>${sum("posted_today")}</b><span>Posted today</span></div>
@@ -2375,6 +2506,51 @@ document.addEventListener("click", async e => {
   if (b.tagName === "A") e.preventDefault();
   try {
     if (a === "go") { closePops(); return go(d.v, d.tab); }
+
+    if (a === "camptab") { S.campTab = d.tab; return drawCampaigns(); }
+    if (a === "campopen") { return openCampaignModal(d.id); }
+    if (a === "campadd") { $("#formdlg").close(); return openEnrollModal(d.id); }
+    if (a === "campconfirm") {
+      const cid = $("#enroll_cid") ? $("#enroll_cid").value : "";
+      await send("/api/campaigns/enroll", {campaign_id: d.id, creator_id: cid});
+      $("#formdlg").close();
+      toast("Campaign added! Creator updated with campaign rate and tags.", "ok");
+      return loadCampaigns();
+    }
+    if (a === "campunenroll") {
+      await send("/api/campaigns/unenroll", {campaign_id: d.id});
+      toast("Campaign removed.", "ok");
+      return loadCampaigns();
+    }
+    if (a === "picktrend") {
+      S.trendPick = d.ch;
+      return drawOverview();
+    }
+    if (a === "trendfollow") {
+      window.open(`https://www.twitch.tv/${encodeURIComponent(d.ch)}`, "_blank");
+      return;
+    }
+    if (a === "trendgift") {
+      window.open(`https://www.twitch.tv/subs/${encodeURIComponent(S.trendPick || "ludwig")}`, "_blank");
+      return;
+    }
+    if (a === "clipstream") {
+      go("overview");
+      const urlInput = $("#url");
+      if (urlInput) {
+        urlInput.value = `https://www.twitch.tv/${d.ch}`;
+        urlInput.focus();
+        if (typeof onLink === "function") onLink(urlInput);
+      }
+      toast(`Ready to clip ${d.name}. Click Make clips or press Enter.`, "ok");
+      return;
+    }
+    if (a === "focusadd") {
+      const urlInput = $("#url");
+      if (urlInput) { urlInput.focus(); urlInput.scrollIntoView({behavior:"smooth", block:"center"}); }
+      return;
+    }
+
     if (a === "aimodels") {
       b.disabled = true;
       try {
@@ -2719,6 +2895,222 @@ $("#main").addEventListener("scroll", () => $(".topbar").classList.toggle("stuck
   checkNew(true);
   setInterval(async () => { try { S.status = await api("/api/status"); drawShell(); if (S.view === "overview") drawOverview(); checkNew(); } catch {} }, 15000);
 })();
+
+/* ============================================================ Campaigns Marketplace */
+let _campData = { catalog: [], enrolled: [] };
+
+async function loadCampaigns() {
+  try {
+    _campData = await api("/api/campaigns");
+  } catch (e) {
+    console.error("Campaigns load error:", e);
+  }
+  drawCampaigns();
+}
+
+function drawCampaigns() {
+  const box = $("#campSlot"); if (!box) return;
+  S.campTab = S.campTab || "find";
+  S.campStep = S.campStep || 1;
+  S.campSearch = S.campSearch || "";
+  S.campSort = S.campSort || "popular";
+
+  const catalog = _campData.catalog || [];
+  const enrolled = _campData.enrolled || [];
+
+  let filtered = catalog.slice();
+  if (S.campSearch) {
+    const q = S.campSearch.toLowerCase();
+    filtered = filtered.filter(c => (c.title + " " + c.brand + " " + (c.tags || "") + " " + (c.streamer || "")).toLowerCase().includes(q));
+  }
+  if (S.campSort === "payout") filtered.sort((a, b) => b.rate_per_1k - a.rate_per_1k);
+  else if (S.campSort === "pool") filtered.sort((a, b) => b.prize_pool - a.prize_pool);
+  else if (S.campSort === "budget") filtered.sort((a, b) => b.budget_left - a.budget_left);
+
+  const platIcons = plats => (plats || []).map(p => {
+    if (p === "instagram") return ic("instagram");
+    if (p === "tiktok") return ic("tiktok");
+    if (p === "youtube") return ic("video");
+    if (p === "twitter") return ic("twitter");
+    return ic("link");
+  }).join("");
+
+  const content = S.campTab === "find" ? `
+    <div class="camp-bar">
+      <div class="camp-search">
+        ${ic("search")}
+        <input id="campSearchInput" placeholder="Search campaigns or brands" value="${esc(S.campSearch)}">
+      </div>
+      <select class="camp-sort" id="campSortSelect">
+        <option value="popular"${S.campSort === "popular" ? " selected" : ""}>Most popular</option>
+        <option value="payout"${S.campSort === "payout" ? " selected" : ""}>Highest payout</option>
+        <option value="pool"${S.campSort === "pool" ? " selected" : ""}>Largest prize pool</option>
+        <option value="budget"${S.campSort === "budget" ? " selected" : ""}>Remaining budget</option>
+      </select>
+    </div>
+    <div class="camp-grid">
+      ${filtered.map(c => `
+        <div class="camp-card">
+          <div class="camp-banner" style="background:${c.banner_bg}">
+            <div class="camp-banner-top">
+              <span class="camp-badge">${esc(c.badge || "• New Campaign")}</span>
+              <span class="camp-pool-badge">${esc(c.pool_badge || `$${c.prize_pool.toLocaleString()}`)}</span>
+            </div>
+            <div>
+              <div class="camp-banner-text">${esc(c.banner_text || c.title)}</div>
+              <div class="camp-banner-sub">${esc(c.banner_sub || c.brand)}</div>
+            </div>
+          </div>
+          <div class="camp-body">
+            <div class="camp-meta-top">
+              <span class="camp-brand">${esc(c.brand)} ${c.verified ? `<span class="ver">✓</span>` : ""}</span>
+              <span class="camp-budget">$${Number(c.budget_left).toLocaleString()} left of $${Number(c.prize_pool).toLocaleString()}</span>
+            </div>
+            <div class="camp-title">${esc(c.title)}</div>
+            <div class="camp-platforms">
+              ${platIcons(c.platforms)}
+            </div>
+            <div class="camp-actions">
+              <button type="button" class="camp-btn-open" data-act="campopen" data-id="${esc(c.id)}">Open ${ic("upright")}</button>
+              ${c.enrolled ? `<button type="button" class="camp-btn-add enrolled">${ic("check")} Enrolled</button>`
+                : `<button type="button" class="camp-btn-add" data-act="campadd" data-id="${esc(c.id)}">${ic("plus")} Add to my campaigns</button>`}
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  ` : `
+    <div class="camp-my-list">
+      ${enrolled.length ? `
+        <div class="card"><div class="card-head"><div><h2>My Active Campaigns</h2><p class="sub">Clips automatically carry campaign hashtags and payout rates</p></div></div>
+        <div class="scroll">
+          <table>
+            <tr><th>Campaign</th><th>Linked Streamer</th><th class="num">Rate / 1k</th><th class="num">Clips Made</th><th class="num">Views</th><th class="num">Est. Earnings</th><th></th></tr>
+            ${enrolled.map(e => `
+              <tr>
+                <td><b>${esc(e.campaign_title || e.campaign_id)}</b></td>
+                <td>${esc(e.creator_name || "All creators")}</td>
+                <td class="num">$${Number(e.rate_per_1k || 0).toFixed(2)}</td>
+                <td class="num">${e.clips_count || 0}</td>
+                <td class="num">${Number(e.views || 0).toLocaleString()}</td>
+                <td class="num" style="color:var(--good);font-weight:700">$${Number(e.earnings || 0).toFixed(2)}</td>
+                <td style="text-align:right">
+                  <button type="button" class="btn sm" data-act="campunenroll" data-id="${esc(e.campaign_id)}">Leave</button>
+                </td>
+              </tr>
+            `).join("")}
+          </table>
+        </div></div>
+      ` : `
+        <div class="empty">
+          <img src="/brand/favicon.svg" alt="">
+          <b>No active campaigns yet</b>
+          Browse the catalog above and click "Add to my campaigns" to start earning per view on your clips.
+        </div>
+      `}
+    </div>
+  `;
+
+  put(box, `
+    <div class="camp-wrap">
+      <div class="camp-head">
+        <div>
+          <h1>Campaigns</h1>
+          <p class="sub">Brands pay you per view</p>
+        </div>
+        <div class="camp-tabs">
+          <button type="button" class="camp-tab-btn ${S.campTab === "find" ? "on" : ""}" data-act="camptab" data-tab="find">Find campaigns</button>
+          <button type="button" class="camp-tab-btn ${S.campTab === "my" ? "on" : ""}" data-act="camptab" data-tab="my">My campaigns ${enrolled.length ? `<span class="badge-n">${enrolled.length}</span>` : ""}</button>
+        </div>
+      </div>
+
+      <div class="camp-stepper">
+        <div class="camp-step ${S.campStep >= 1 ? "on" : ""}"><span class="camp-step-num">1</span><b>Pick</b><span class="camp-step-sub">Next</span></div>
+        <div class="camp-step-sep"></div>
+        <div class="camp-step ${S.campStep >= 2 ? "on" : ""}"><span class="camp-step-num">2</span><b>Add to streamer</b></div>
+        <div class="camp-step-sep"></div>
+        <div class="camp-step ${S.campStep >= 3 ? "on" : ""}"><span class="camp-step-num">3</span><b>Set it up</b></div>
+        <div class="camp-step-sep"></div>
+        <div class="camp-step ${S.campStep >= 4 ? "on" : ""}"><span class="camp-step-num">4</span><b>Make clips</b></div>
+      </div>
+
+      ${content}
+    </div>
+  `);
+
+  const searchInput = $("#campSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", e => {
+      S.campSearch = e.target.value;
+      drawCampaigns();
+    });
+  }
+  const sortSelect = $("#campSortSelect");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", e => {
+      S.campSort = e.target.value;
+      drawCampaigns();
+    });
+  }
+}
+
+function openCampaignModal(campId) {
+  const c = (_campData.catalog || []).find(x => x.id === campId);
+  if (!c) return;
+  const d = $("#formdlg");
+  d.innerHTML = `<div class="dlg-box" style="max-width:520px">
+    <div class="dlg-head"><h3>${esc(c.title)}</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+    <div class="dlg-body">
+      <div style="background:${c.banner_bg};padding:18px;border-radius:var(--r);color:#fff;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">${esc(c.badge || "Campaign")}</span>
+          <b style="color:var(--brand)">$${c.rate_per_1k} / 1k views</b>
+        </div>
+        <div style="font-size:18px;font-weight:700">${esc(c.brand)}</div>
+        <div style="font-size:13px;opacity:.9">${esc(c.streamer || "")}</div>
+      </div>
+      <p style="margin-bottom:12px;font-size:13px;line-height:1.5">${esc(c.rules || "")}</p>
+      <div style="background:var(--muted);padding:12px;border-radius:var(--r-sm);font-size:12px;color:var(--dim);margin-bottom:14px">
+        <div><b>Tags:</b> <code>${esc(c.tags || "")}</code></div>
+        <div style="margin-top:4px"><b>Budget remaining:</b> $${Number(c.budget_left).toLocaleString()} of $${Number(c.prize_pool).toLocaleString()}</div>
+        <div style="margin-top:4px"><b>Campaign ends in:</b> ${esc(c.ends_in || "Active")}</div>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn" data-act="dlgcancel">Close</button>
+        <button class="btn primary" data-act="campadd" data-id="${esc(c.id)}">+ Add to my campaigns</button>
+      </div>
+    </div>
+  </div>`;
+  d.showModal();
+}
+
+function openEnrollModal(campId) {
+  const c = (_campData.catalog || []).find(x => x.id === campId);
+  if (!c) return;
+  const d = $("#formdlg");
+  d.innerHTML = `<div class="dlg-box" style="max-width:480px">
+    <div class="dlg-head"><h3>Add Campaign to Streamer</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+    <div class="dlg-body">
+      <p style="font-size:13px;color:var(--dim);margin-bottom:14px">Link <b>${esc(c.title)}</b> to one of your streamers. Clips generated will automatically include the campaign tag and track view earnings at <b>$${c.rate_per_1k} / 1k views</b>.</p>
+      <label class="f" style="margin-bottom:12px">Choose Streamer
+        <select id="enroll_cid">
+          <option value="">Apply to all streamers</option>
+          ${S.creators.map(cr => `<option value="${esc(cr.id)}">${esc(cr.name)}</option>`).join("")}
+        </select>
+      </label>
+      <div style="background:var(--muted);padding:10px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:16px">
+        <div><b>Auto-added tags:</b> ${esc(c.tags)}</div>
+        <div style="margin-top:2px"><b>Rate:</b> $${c.rate_per_1k} per 1,000 views</div>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn" data-act="dlgcancel">Cancel</button>
+        <button class="btn primary" data-act="campconfirm" data-id="${esc(c.id)}">Confirm & Link Campaign</button>
+      </div>
+    </div>
+  </div>`;
+  d.showModal();
+}
+
 </script>
 </body>
 </html>

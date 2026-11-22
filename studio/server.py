@@ -25,7 +25,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 
 from . import admin as admins
 from . import account, load
-from . import (accounts, ai, alerts, auth, brain, config, creators, ctx, db, jobs, live, media, posting,
+from . import (accounts, ai, alerts, auth, brain, campaigns, config, creators, ctx, db, jobs, live, media, posting,
                profiles, render, safe, transcribe, usage)
 
 from . import tools as _tools  # noqa: E402
@@ -1779,6 +1779,36 @@ def admin_delete_user(request: Request, uid: str, body: dict = Body(...)):
     with db.engine.begin() as c:
         admins._log(c, me_.id, "delete", target.id, "account deleted")
     return {"ok": True}
+
+
+@app.get("/api/campaigns")
+def list_campaigns():
+    return campaigns.list_campaigns()
+
+
+@app.post("/api/campaigns/enroll")
+def enroll_campaign(body: dict = Body(...)):
+    camp_id = str(body.get("campaign_id") or "").strip()
+    creator_id = str(body.get("creator_id") or "").strip()
+    if not camp_id:
+        raise HTTPException(400, "Campaign ID required")
+    try:
+        return campaigns.enroll(camp_id, creator_id)
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/api/campaigns/unenroll")
+def unenroll_campaign(body: dict = Body(...)):
+    camp_id = str(body.get("campaign_id") or "").strip()
+    if not camp_id:
+        raise HTTPException(400, "Campaign ID required")
+    return {"ok": campaigns.unenroll(camp_id)}
+
+
+@app.get("/api/trending")
+def list_trending():
+    return campaigns.get_trending()
 
 
 def main():
