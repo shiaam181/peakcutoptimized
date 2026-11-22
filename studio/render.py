@@ -319,13 +319,21 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
             from . import director
             if req_layout in ("facecam", "facecam_game_top", "auto"):
                 src_key = str(src)
-                cam = _FACECAM_CACHE.get(src_key)
+                src_name = Path(src).name
+                cam = _FACECAM_CACHE.get(src_key) or _FACECAM_CACHE.get(src_name)
+                if not cam and clip.get("facecam") and len(clip["facecam"]) == 4:
+                    fx, fy, fw, fh = clip["facecam"]
+                    cam = {"x": int(fx), "y": int(fy), "w": int(fw), "h": int(fh), "shape": "rect"}
+                    _FACECAM_CACHE[src_key] = cam
+                    _FACECAM_CACHE[src_name] = cam
                 if not cam:
-                    cam = director.detect_facecam(src, start=start, duration=dur, src_w=src_w, src_h=src_h)
-                    if not cam:
-                        cam = director.detect_facecam(src, start=0.0, duration=max(60.0, dur * 2), src_w=src_w, src_h=src_h)
+                    for test_s in [start, max(15.0, start), 60.0, 180.0, 300.0, 600.0, 0.0]:
+                        cam = director.detect_facecam(src, start=test_s, duration=max(30.0, dur), src_w=src_w, src_h=src_h)
+                        if cam:
+                            break
                     if cam:
                         _FACECAM_CACHE[src_key] = cam
+                        _FACECAM_CACHE[src_name] = cam
                 if cam:
                     reaction_top = (req_layout != "facecam_game_top")
                     custom_filter, cap_y, hook_y = director.build_facecam_filter(cam, src_w, src_h, config.OUT_FPS, reaction_top=reaction_top)

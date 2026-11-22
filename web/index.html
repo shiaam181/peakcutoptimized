@@ -2540,69 +2540,19 @@ document.addEventListener("click", async e => {
     if (a === "campmakeclip") {
       const camp = (_campData.catalog || []).find(x => x.id === d.id);
       if (!camp) return;
-      const dlg = $("#formdlg");
-      const stName = camp.streamer || camp.title;
-      dlg.innerHTML = `<div class="dlg-box" style="max-width:520px">
-        <div class="dlg-head">
-          <h3>Clip for ${esc(stName)}</h3>
-          <button class="icon-btn" data-act="dlgcancel" aria-label="Close">${ic("x")}</button>
-        </div>
-        <div class="dlg-body">
-          <p style="font-size:13px;color:var(--dim);line-height:1.5;margin:0">
-            ShineCut creates viral shorts from <b>video links</b> (YouTube video, Twitch VOD) or <b>uploaded video files</b>. Choose how to source your video for <b>${esc(stName)}</b>:
-          </p>
-
-          <div style="display:flex;flex-direction:column;gap:12px;margin:10px 0">
-            <!-- 1. Paste Video Link -->
-            <div style="background:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:14px">
-              <div style="font-weight:700;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-                ${ic("link")} Option 1: Paste YouTube or Twitch Video Link
-              </div>
-              <p style="font-size:12px;color:var(--dim);margin-bottom:8px">
-                Paste any stream replay or video URL (e.g. <code>youtube.com/watch?v=...</code> or <code>twitch.tv/videos/...</code>):
-              </p>
-              <div style="display:flex;gap:8px">
-                <input id="camp_v_url" placeholder="https://www.youtube.com/watch?v=..." style="flex:1;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:13px">
-                <button type="button" class="btn primary sm" data-act="campuseurl" data-id="${esc(camp.id)}">Clip this link</button>
-              </div>
-              <div style="margin-top:8px;font-size:12px">
-                <a href="${esc(camp.streamer_vods_url || "https://www.youtube.com/results?search_query=" + encodeURIComponent(stName + " stream replay"))}" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;text-decoration:none">
-                  Open ${esc(stName)}'s YouTube Videos ↗
-                </a> <span style="color:var(--dim)">(copy any video link and paste above)</span>
-              </div>
-            </div>
-
-            <!-- 2. Upload Video -->
-            <div style="background:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;align-items:center;justify-content:space-between">
-              <div>
-                <div style="font-weight:700;font-size:13px;margin-bottom:2px;display:flex;align-items:center;gap:6px">
-                  ${ic("up")} Option 2: Upload Video File
-                </div>
-                <div style="font-size:12px;color:var(--dim)">Drop an MP4, MOV, or MKV file from your computer</div>
-              </div>
-              <button type="button" class="btn sm" data-act="campuploadfile" data-id="${esc(camp.id)}">Choose file</button>
-            </div>
-
-            <!-- 3. Record Live Stream -->
-            ${camp.streamer_channel ? `
-              <div style="background:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;align-items:center;justify-content:space-between">
-                <div>
-                  <div style="font-weight:700;font-size:13px;margin-bottom:2px;display:flex;align-items:center;gap:6px">
-                    ${ic("radio")} Option 3: Record Live Stream
-                  </div>
-                  <div style="font-size:12px;color:var(--dim)">Record and auto-clip ${esc(stName)} while live streaming on Twitch</div>
-                </div>
-                <button type="button" class="btn sm" data-act="campliverecord" data-id="${esc(camp.id)}">Record live</button>
-              </div>
-            ` : ""}
-          </div>
-
-          <div class="dlg-foot">
-            <button class="btn" data-act="dlgcancel">Close</button>
-          </div>
-        </div>
-      </div>`;
-      dlg.showModal();
+      if ($("#formdlg")?.open) $("#formdlg").close();
+      go("overview");
+      const vUrl = camp.video_url || "https://www.youtube.com/watch?v=q1jR850CE_o";
+      const urlInput = $("#url");
+      if (urlInput) {
+        urlInput.value = vUrl;
+        urlInput.focus();
+        if (typeof onLink === "function") onLink(urlInput);
+      }
+      if ($("#o_campaign")) $("#o_campaign").value = camp.title + " - " + (camp.content_rules || []).join(" ");
+      if ($("#o_req_tags")) $("#o_req_tags").value = camp.tags || "";
+      if ($("#o_req_hook")) $("#o_req_hook").value = camp.hook_text || "";
+      toast(`Loaded official campaign video for ${camp.streamer || camp.title}. Click "Make clips"!`, "ok");
       return;
     }
     if (a === "campuseurl") {
@@ -3144,8 +3094,9 @@ function drawCampaigns() {
             </div>
             <div class="camp-actions">
               <button type="button" class="camp-btn-open" data-act="campopen" data-id="${esc(c.id)}">Open ${ic("upright")}</button>
-              ${c.enrolled ? `<button type="button" class="camp-btn-add enrolled">${ic("check")} Enrolled</button>`
-                : `<button type="button" class="camp-btn-add" data-act="campadd" data-id="${esc(c.id)}">${ic("plus")} Add to my campaigns</button>`}
+              <button type="button" class="btn primary sm" data-act="campmakeclip" data-id="${esc(c.id)}" title="Clip official campaign video">${ic("scissors")} Clip</button>
+              ${c.enrolled ? `<button type="button" class="camp-btn-add enrolled" data-act="campopen" data-id="${esc(c.id)}">${ic("check")} Enrolled</button>`
+                : `<button type="button" class="camp-btn-add" data-act="campadd" data-id="${esc(c.id)}">${ic("plus")} Add</button>`}
             </div>
           </div>
         </div>
@@ -3308,6 +3259,28 @@ function openCampaignModal(campId) {
         <div><span style="color:var(--dim)">Remaining:</span><br><b>$${Number(c.budget_left).toLocaleString()}</b></div>
         <div><span style="color:var(--dim)">Min Views:</span><br><b>${Number(c.min_views || 1000).toLocaleString()}</b></div>
         <div><span style="color:var(--dim)">Ends In:</span><br><b>${esc(c.ends_in || "Active")}</b></div>
+      </div>
+
+      <!-- Official Campaign Video to Clip -->
+      <div class="camp-sec" style="background:var(--muted);border:1.5px solid var(--brand);border-radius:var(--r);padding:14px;margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--brand)">
+            ${ic("play")} Official Campaign Video to Clip
+          </div>
+          <span style="font-size:11px;background:var(--brand-soft);color:var(--brand);padding:2px 8px;border-radius:999px;font-weight:600">Whop Source</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">${esc(c.video_title || "Official Stream Replay")}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <code style="flex:1;min-width:220px;font-size:12px;padding:6px 10px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--line);word-break:break-all">${esc(c.video_url || "https://www.youtube.com/watch?v=q1jR850CE_o")}</code>
+          <button type="button" class="btn primary sm" data-act="campmakeclip" data-id="${esc(c.id)}" style="display:inline-flex;align-items:center;gap:6px">${ic("scissors")} Clip this video now</button>
+        </div>
+        ${c.streamer_vods_url ? `
+          <div style="margin-top:8px;font-size:12px">
+            <a href="${esc(c.streamer_vods_url)}" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600;text-decoration:none">
+              Browse more ${esc(c.streamer || "creator")} stream VODs ↗
+            </a>
+          </div>
+        ` : ""}
       </div>
 
       ${ratesHtml}

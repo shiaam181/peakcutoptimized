@@ -859,9 +859,8 @@ def _run_job(job):
                         existing.append(ct)
                 c["hashtags"] = existing
                 c["req_tags"] = camp_tags_str
-            # Only the gameplay layout uses a webcam, so it is only looked for then, and only once: a
-            # stream with no webcam is not looked for again on every clip of it.
-            if o["layout"] == "gameplay" and face is False:
+            # Look for webcam overlay once per video so all clips can use facecam/reaction split
+            if o["layout"] in ("gameplay", "facecam", "auto") and face is False:
                 face = _facecam(job)
             if face:
                 c["facecam"] = face
