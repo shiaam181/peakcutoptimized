@@ -4,6 +4,7 @@ Public pages:  /  /login  /signup          The app:  /app  (signed-in users only
 Everything under /api, /media and /oauth needs a session, except /api/auth/* and /api/public."""
 import hashlib
 import hmac
+import ipaddress
 import json
 import os
 import re
@@ -255,16 +256,50 @@ def _from_cdn(addr: str) -> bool:
     return any(ip in n for n in _CDN_RANGES)
 
 
+_PROXY_CIDRS = ("127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "169.254.0.0/16",
+                "::1/128", "fc00::/7", "fe80::/10")
+_PROXY_RANGES = [ipaddress.ip_network(r) for r in _PROXY_CIDRS]
+
+
+def _valid_ip(text: str) -> str:
+    """The address as text if it really is an IP address, otherwise ""."""
+    try:
+        ip = ipaddress.ip_address(text)
+    except ValueError:
+        return ""
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return str(ip)
+
+
+def _from_proxy(addr: str) -> bool:
+    clean = _valid_ip(addr)
+    if not clean:
+        return False
+    ip = ipaddress.ip_address(clean)
+    return any(ip in n for n in _PROXY_RANGES)
+
+
+def _trust_proxy() -> bool:
+    return bool(config.env("PEAKCUT_TRUST_PROXY"))
+
+
 def _ip(request: Request) -> str:
     """The visitor's address, used for rate limits. The connection's own address, or the one the proxy in front
     reports (PEAKCUT_TRUST_PROXY). If that connection comes from the CDN, the CDN's header names the real visitor
     (PEAKCUT_CLIENT_IP_HEADER). The header is believed only when the CDN really sent the request, so nobody can
-    pick their own address by sending it themselves."""
-    fwd = request.headers.get("x-forwarded-for", "")
-    peer = (fwd.split(",")[0].strip() if fwd and config.env("PEAKCUT_TRUST_PROXY") else "") or (request.client.host if request.client else "")
+    pick their own address by sending it themselves.
+
+    The proxy adds the address it saw at the END of X-Forwarded-For. Everything before that was written by the
+    visitor, so only the last entry is believed, and only when the connection came from a proxy on a private address."""
+    direct = request.client.host if request.client else ""
+    peer = direct
+    fwd = ",".join(request.headers.getlist("x-forwarded-for"))
+    if _trust_proxy() and fwd and _from_proxy(direct):
+        peer = _valid_ip(fwd.rsplit(",", 1)[-1].strip()) or direct
     named = config.env("PEAKCUT_CLIENT_IP_HEADER")
     if named and request.headers.get(named) and _from_cdn(peer):
-        return request.headers[named].split(",")[0].strip()[:64]
+        return _valid_ip(request.headers[named].split(",")[0].strip()[:64]) or peer
     return peer
 
 
@@ -579,7 +614,13 @@ def status(request: Request):
     return {"user": auth.public(me_), "update": updates.latest() if me_.is_admin else None, "accounts": config.ACCOUNTS, "disk_full": load.disk_full(), "no_ffmpeg": bool(_tools.missing()), "links": {"repo": config.REPO_URL, "follow": config.FOLLOW_URL}, "ai": usage.brief(), "unread": notices.unread(),
             "tour": not accounts.settings()["tour_done"],
             "youtube": accounts.youtube_ready(), "connect": {p: accounts.can_connect(p) for p in accounts.PLATFORM_NAMES}, "max_upload_mb": config.MAX_UPLOAD_MB, "upload_part_mb": config.UPLOAD_PART_MB, "max_batch": config.MAX_ACTIVE_JOBS_PER_USER,
-            "styles": {k: v["label"] for k, v in render.STYLES.items()}, "layouts": render.LAYOUTS}
+            "styles": {k: v["label"] for k, v in render.STYLES.items()}, "layouts": render.LAYOUTS, "speech": _speech_brief()}
+
+
+def _speech_brief() -> dict:
+    """Which spoken languages can be transcribed here: for the language choice when adding a video."""
+    from . import fetch_model
+    return {k: {"label": m[0], "size_mb": m[3], "state": fetch_model.status(k)} for k, m in fetch_model.MODELS.items()}
 
 
 # ================================================================ videos
@@ -1394,6 +1435,45 @@ def ai_test(request: Request):
         raise HTTPException(400, str(e))
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, ai.explain(e) or "The AI did not answer: " + _ai_error(e))
+
+
+def _speech_lang(lang: str) -> str:
+    from . import fetch_model
+    if not fetch_model.known(lang):
+        raise HTTPException(400, "PeakCut has no speech model for that language.")
+    return lang
+
+
+@app.get("/api/speech")
+def speech_list(request: Request):
+    _admin(request)
+    from . import fetch_model
+    return {"models": [{"lang": k, "label": m[0], "size_mb": m[3], "credit": m[4], "state": fetch_model.status(k),
+                        "percent": fetch_model.state[k]["percent"], "error": fetch_model.state[k]["error"],
+                        "default": k == fetch_model.DEFAULT} for k, m in fetch_model.MODELS.items()]}
+
+
+@app.post("/api/speech/{lang}")
+def speech_download(request: Request, lang: str):
+    _admin(request)
+    from . import fetch_model
+    fetch_model.start(_speech_lang(lang))
+    ctx.bump()
+    return speech_list(request)
+
+
+@app.delete("/api/speech/{lang}")
+def speech_remove(request: Request, lang: str):
+    _admin(request)
+    from . import fetch_model
+    try:
+        fetch_model.remove(_speech_lang(lang))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        raise HTTPException(409, str(e))
+    ctx.bump()
+    return speech_list(request)
 
 
 # ================================================================ posting, accounts, settings

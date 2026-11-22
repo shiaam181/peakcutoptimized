@@ -223,17 +223,42 @@ def set_profiles(cid, profiles: dict, extra: dict = None):
 def log(cid, msg: str):
     if not cid or ctx.uid_or_none() is None or not root(cid).exists():
         return
-    with _lock, (root(cid) / "log.jsonl").open("a", encoding="utf-8") as f:
-        f.write(json.dumps({"t": time.time(), "msg": msg}) + "\n")
+    path = root(cid) / "log.jsonl"
+    with _lock:
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps({"t": time.time(), "msg": msg}) + "\n")
+        try:
+            if path.stat().st_size > LOG_MAX_BYTES:         # a stream that runs for weeks must not grow this for ever
+                keep = path.read_text(encoding="utf-8", errors="ignore").splitlines()[-LOG_KEEP_LINES:]
+                path.write_text("\n".join(keep) + "\n", encoding="utf-8")
+        except OSError:
+            pass
     ctx.bump()
 
 
+LOG_MAX_BYTES, LOG_KEEP_LINES, LOG_TAIL_BYTES = 1_000_000, 500, 64 * 1024
+
+
 def read_log(cid, n=40) -> list:
+    """The newest n lines, newest first. Only the end of the file is read: the page asks for this all the time."""
     f = root(cid) / "log.jsonl"
-    if not f.exists():
+    try:
+        size = f.stat().st_size
+        with f.open("rb") as h:
+            h.seek(max(0, size - LOG_TAIL_BYTES))
+            raw = h.read()
+    except OSError:
         return []
-    lines = f.read_text(encoding="utf-8").splitlines()[-n:]
-    return [json.loads(x) for x in reversed(lines) if x.strip()]
+    lines = raw.decode("utf-8", errors="ignore").splitlines()
+    if size > LOG_TAIL_BYTES:
+        lines = lines[1:]                                   # the first one starts in the middle of a line
+    out = []
+    for x in reversed(lines[-n:]):
+        try:
+            out.append(json.loads(x))
+        except ValueError:
+            pass
+    return out
 
 
 def mark_seen_upload(cid: str, video_id: str):

@@ -353,17 +353,60 @@ def _wrapped(prompt, schema):
             "\"items\", whose value follows this JSON Schema:\n" + json.dumps(_json_schema(schema)))
 
 
+def _json_chunks(text: str):
+    """Every balanced {...} or [...] in the text, in the order they appear."""
+    out, depth, start, in_str, esc = [], 0, None, False, False
+    for i, ch in enumerate(text):
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch in "{[":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch in "}]":
+            depth -= 1
+            if depth == 0 and start is not None:
+                out.append(text[start:i + 1])
+                start = None
+            elif depth < 0:
+                depth = 0
+    return out
+
+
 def _parse(text):
-    """The JSON in an answer, even if the model wrapped it in a code fence or a sentence."""
+    """The JSON in an answer, even if the model wrapped it in a code fence or a sentence.
+
+    A model that is not careful sometimes puts a sentence in front of the JSON,
+    or a second object after it, or forgets a comma. The JSON is looked for
+    inside the answer rather than demanded of it."""
     text = (text or "").strip()
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
+    out = None
     try:
         out = json.loads(text)
     except ValueError:
-        m = re.search(r"[\[{].*[\]}]", text, re.S)
-        if not m:
-            raise AIError("The AI did not answer with JSON.")
-        out = json.loads(m.group(0))
+        for chunk in _json_chunks(text):
+            try:
+                out = json.loads(chunk)
+                break
+            except ValueError:
+                continue
+        if out is None:
+            m = re.search(r"[\[{].*[\]}]", text, re.S)
+            if not m:
+                raise AIError("The AI did not answer with JSON.")
+            try:
+                out = json.loads(m.group(0))
+            except ValueError:
+                raise AIError("The AI did not answer with JSON.")
     if isinstance(out, dict) and "items" in out:
         out = out["items"]
     return out

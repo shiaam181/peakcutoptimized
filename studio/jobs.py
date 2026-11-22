@@ -327,7 +327,9 @@ def create(source: dict, options: dict, enqueue=True, creator=None, kind="video"
     c = creators.get(creator) if creator else None
     if c:
         d = creators.root(c["id"]) / ("live" if kind == "live" else "videos") / jid
-        base = {**DEFAULTS, **{k: c[k] for k in ("max_clips", "min_len", "max_len", "style", "layout")}}
+        base = {**DEFAULTS, **{k: c[k] for k in ("max_clips", "min_len", "max_len", "style", "layout", "captions", "lang") if k in c},
+                "hook_text": creators.clean_hook(c.get("hook_text")),
+                "description_text": creators.clean_description(c.get("description_text"))}
     else:
         d, base, creator = config.user_dir(ctx.uid()) / "jobs" / jid, dict(DEFAULTS), None
     d.mkdir(parents=True)
@@ -385,6 +387,8 @@ def request_render(jid, cid, changes: dict):
     job = _jobs[jid]
     clip = next(c for c in job["clips"] if c["id"] == cid)
     new = dict(clip)
+    if "captions" in changes:
+        new.update(clean_options({"captions": changes["captions"]}))
     for k in ("start", "end"):
         if k in changes:
             new[k] = round(float(changes[k]), 2)
@@ -519,21 +523,24 @@ def render_one(job, clip, words):
         default_shift = config.LIVE_AV_OFFSET if is_live else 0.0
         v_shift = float(clip.get("v_shift", default_shift))
         local = dict(clip, start=clip["start"] - off, end=clip["end"] - off, v_shift=v_shift, hook=roman.to_roman(clip.get("hook") or ""))
-        span = [round(clip["start"], 2), round(clip["end"], 2), "en2"]      # "en2": captions made always-English
-        if clip.get("fixed_for") == span and clip.get("fixed_words") and not any(
-                roman.needs_roman(w.get("w", "")) for w in clip["fixed_words"]):
-            raw = clip["fixed_words"]          # already tidied for this exact span: no second AI call
+        if clip.get("captions", True):
+            span = [round(clip["start"], 2), round(clip["end"], 2), "en2"]      # "en2": captions made always-English
+            if clip.get("fixed_for") == span and clip.get("fixed_words") and not any(
+                    roman.needs_roman(w.get("w", "")) for w in clip["fixed_words"]):
+                raw = clip["fixed_words"]          # already tidied for this exact span: no second AI call
+            else:
+                raw = [w for w in words if clip["start"] - 1 <= w["s"] <= clip["end"] + 1]
+                try:
+                    usage.set_context(job.get("creator"), job.get("title") or "")
+                    raw = brain.english_captions(raw, job.get("lang") or "", job.get("title") or "",
+                                                 youtube_english=lambda: _english_part(job, clip))
+                    clip.update(fixed_words=raw, fixed_for=span)
+                except Exception:  # noqa: BLE001 - captions still render with the words as heard
+                    pass
+            # the last word on it: whatever was said, nothing is drawn in Hindi or Urdu script
+            near = [dict(w, s=w["s"] - off, e=w["e"] - off) for w in roman.words(raw)]
         else:
-            raw = [w for w in words if clip["start"] - 1 <= w["s"] <= clip["end"] + 1]
-            try:
-                usage.set_context(job.get("creator"), job.get("title") or "")
-                raw = brain.english_captions(raw, job.get("lang") or "", job.get("title") or "",
-                                             youtube_english=lambda: _english_part(job, clip))
-                clip.update(fixed_words=raw, fixed_for=span)
-            except Exception:  # noqa: BLE001 - captions still render with the words as heard
-                pass
-        # the last word on it: whatever was said, nothing is drawn in Hindi or Urdu script
-        near = [dict(w, s=w["s"] - off, e=w["e"] - off) for w in roman.words(raw)]
+            near = []
         out = render.render_clip(src, d / "clips", clip["id"], local, near, job["width"], job["height"])
         clip.update(out, status="done", version=clip.get("version", 0) + 1, error=None)
         post = {k: clip[k] for k in ("title", "description", "hashtags", "hook", "start", "end", "score")}

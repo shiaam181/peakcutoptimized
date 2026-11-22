@@ -86,6 +86,7 @@ LAYOUTS = {
     "blur": "Full frame + blurred fill",
     "crop": "Fill the screen (centre crop)",
     "zoom": "Zoomed in + blurred fill",
+    "gameplay": "Gameplay fills the screen, facecam in the corner",
 }
 
 
@@ -241,12 +242,40 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return head + "\n".join(ev) + "\n"
 
 
+PIP_W = 380            # how wide the facecam is in the 1080-wide frame
+PIP_MARGIN = 26
+
+def _hook_y(layout, hook_y, facecam=None):
+    """Where the heading goes. In the gameplay layout the webcam sits in the top corner, so a heading
+    across the top would run under it: it goes just below the picture instead."""
+    if layout == "gameplay" and facecam and len(facecam) == 4 and facecam[2] > 8:
+        return PIP_MARGIN + int(round(PIP_W * facecam[3] / facecam[2])) + 32
+    return hook_y
+
+
 def _filter(layout, fg_h, box=None):
-    # Optional 'box' parameter kept for backward compatibility with tests that may pass three args.
-    # Currently not used in the filter generation logic.
-    if layout == "crop":
-        return f"[0:v]setpts=PTS-STARTPTS,fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1[v0];"
-    return (f"[0:v]setpts=PTS-STARTPTS,fps={config.OUT_FPS},split=2[a][b];"
+    if layout == "gameplay" and box:
+        fx, fy, fw, fh = (int(v) for v in box)
+        if fw > 8 and fh > 8:
+            pip_h = max(2, int(round(PIP_W * fh / fw)))
+            return (f"[0:v]fps={config.OUT_FPS},split=2[base][fc];"
+                    f"[base]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1[b];"
+                    f"[fc]crop={fw}:{fh}:{fx}:{fy},scale={PIP_W}:{pip_h},setsar=1[p];"
+                    f"[b][p]overlay={W - PIP_W - PIP_MARGIN}:{PIP_MARGIN}[v0];")
+    fill = f"[0:v]fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}"
+    if layout == "crop" or (layout == "gameplay" and not box):
+        return fill + ",setsar=1[v0];"
+    if layout == "left":
+        return fill + ":0:0,setsar=1[v0];"
+    if layout == "right":
+        return fill + ":in_w-out_w:0,setsar=1[v0];"
+    if layout == "fit":
+        return f"[0:v]fps={config.OUT_FPS},scale={W}:{fg_h},pad={W}:{H}:0:(oh-ih)/2:black,setsar=1[v0];"
+    if layout == "split":
+        half = f"scale={W}:{H // 2}:force_original_aspect_ratio=increase,crop={W}:{H // 2}"
+        return (f"[0:v]fps={config.OUT_FPS},split=2[l][r];[l]crop=iw/2:ih:0:0,{half}[t];"
+                f"[r]crop=iw/2:ih:iw/2:0,{half}[u];[t][u]vstack,setsar=1[v0];")
+    return (f"[0:v]fps={config.OUT_FPS},split=2[a][b];"
             f"[a]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=6:2,"
             f"scale={W}:{H},eq=brightness=-0.14:saturation=1.15[bg];"
             f"[b]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}[fg];"
@@ -308,7 +337,7 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     else:
         fg_h = H
 
-    ass = build_ass(words, start, end, clip.get("hook", ""), clip.get("style", "bounce"),
+    ass = build_ass(words if clip.get("captions", True) else [], start, end, clip.get("hook", ""), clip.get("style", "bounce"),
                     clip.get("highlight_words", []), hook_y, cap_y)
     v_shift = float(clip.get("v_shift", 0.0))
     # The clip is made in a short work folder and moved into place afterwards. The caption step of ffmpeg cannot
@@ -317,12 +346,13 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     # break the filter syntax).
     work = Path(tempfile.mkdtemp(prefix="pk"))
     try:
-        return _render_in(work, src, out_dir, name, start, end, applied_layout, fg_h, ass, custom_filter=custom_filter, v_shift=v_shift)
+        meta = {"title": clip.get("title") or "", "description": clip.get("description") or "", "comment": clip.get("description") or ""}
+        return _render_in(work, src, out_dir, name, start, end, applied_layout, fg_h, ass, custom_filter=custom_filter, v_shift=v_shift, meta=meta)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
 
-def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, custom_filter: str = None, v_shift: float = 0.0) -> dict:
+def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, custom_filter: str = None, v_shift: float = 0.0, meta: dict = None) -> dict:
     global _qsv_ok
     (work / f"{name}.ass").write_text(ass, encoding="utf-8")
     (work / "f").mkdir()
@@ -352,7 +382,11 @@ def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layo
             "-filter_complex", fc, "-map", "[v]", "-map", "0:a:0",
             "-af", af,
             "-avoid_negative_ts", "make_zero",
-            "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", "-pix_fmt"]
+            "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart"]
+    for k, v in (meta or {}).items():
+        if v:
+            base += ["-metadata", f"{k}={v}"]
+    base += ["-pix_fmt"]
     encoders = []
     if _qsv_ok is not False:
         encoders.append(("qsv", ["nv12", "-c:v", "h264_qsv", "-global_quality", "23", "-preset", "fast"]))
