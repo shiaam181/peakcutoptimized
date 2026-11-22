@@ -149,14 +149,26 @@ def get_status() -> dict:
 
 
 def set_token(token: str) -> dict:
-    """Manually stores a Hopvisor Bearer token."""
+    """Stores a Hopvisor Bearer token."""
     token = token.strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
     state = _read_user_mcp()
     state["token"] = token
     state["connected"] = bool(token)
     _save_user_mcp(state)
     ctx.bump()
     return {"connected": state["connected"]}
+
+
+def disconnect() -> bool:
+    """Removes the stored Hopvisor token."""
+    state = _read_user_mcp()
+    state["token"] = ""
+    state["connected"] = False
+    _save_user_mcp(state)
+    ctx.bump()
+    return True
 
 
 def exchange_code(code: str, redirect_uri: str) -> bool:

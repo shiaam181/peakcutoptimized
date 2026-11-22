@@ -58,3 +58,4 @@ In your Space on Hugging Face:
 1. **Cold Starts**: Free Spaces enter sleep mode after 48 hours of inactivity. When you visit the link again, it wakes up and takes about 30–60 seconds to boot.
 2. **Persistence**: On the free tier, files inside the container reset if the Space rebuilds. Setting your AI key and settings in **Space Secrets** ensures they survive reboots. For permanent video storage, you can attach a persistent disk under **Settings** $\rightarrow$ **Persistent Storage**.
 3. **Port**: Hugging Face automatically routes traffic to port **7860**, which the Dockerfile is already configured to expose.
+

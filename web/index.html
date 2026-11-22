@@ -2521,18 +2521,57 @@ document.addEventListener("click", async e => {
 
     if (a === "camptab") { S.campTab = d.tab; return drawCampaigns(); }
 
-    if (a === "mcpauth") {
-      const url = _mcpStatus.auth_url || "https://mcp.hopvisor.com/authorize";
-      window.open(url, "hopvisor_oauth", "width=500,height=650");
+    if (a === "mcptoken") {
+      const dlg = $("#formdlg");
+      dlg.innerHTML = `<div class="dlg-box" style="max-width:480px">
+        <div class="dlg-head"><h3>Connect Hopvisor Token</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+        <div class="dlg-body">
+          <p style="font-size:13px;color:var(--dim);margin-bottom:14px">Paste your Hopvisor Bearer token below. This connects your site directly to <code>https://mcp.hopvisor.com/mcp</code> to query live Whop Content Rewards:</p>
+          <label class="f" style="margin-bottom:14px">Hopvisor Token
+            <input id="hopvisor_token_val" placeholder="Paste token here..." autofocus>
+          </label>
+          <div class="dlg-foot">
+            <button class="btn" data-act="tokenguide">How to get token</button>
+            <button class="btn primary" data-act="savetoken">Save & Connect</button>
+          </div>
+        </div>
+      </div>`;
+      dlg.showModal();
       return;
     }
-    if (a === "mcptoken") {
-      const tok = prompt("Enter your Hopvisor Bearer Token:");
-      if (tok) {
-        await send("/api/mcp/hopvisor/token", {token: tok});
-        toast("Hopvisor Token saved!", "ok");
-        return loadCampaigns();
-      }
+    if (a === "savetoken") {
+      const input = $("#hopvisor_token_val");
+      const tok = input ? input.value.trim() : "";
+      if (!tok) return toast("Please paste your Hopvisor token.", "bad");
+      await send("/api/mcp/hopvisor/token", {token: tok});
+      $("#formdlg").close();
+      toast("Hopvisor MCP Token saved & connected!", "ok");
+      return loadCampaigns();
+    }
+    if (a === "mcpdisconnect") {
+      await send("/api/mcp/hopvisor/disconnect");
+      toast("Hopvisor disconnected.", "ok");
+      return loadCampaigns();
+    }
+    if (a === "tokenguide") {
+      const dlg = $("#formdlg");
+      dlg.innerHTML = `<div class="dlg-box" style="max-width:540px">
+        <div class="dlg-head"><h3>How to Get Your Hopvisor Token</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+        <div class="dlg-body" style="font-size:13px;line-height:1.6">
+          <p style="margin-bottom:12px">Follow these 3 quick steps to copy your Hopvisor token:</p>
+          <div style="background:var(--muted);padding:14px;border-radius:var(--r-sm);margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
+            <div><b>Step 1:</b> Open <a href="https://hopvisor.com" target="_blank" rel="noopener" style="color:var(--brand);font-weight:600">hopvisor.com</a> in your browser and log in.</div>
+            <div><b>Step 2:</b> Press <kbd style="background:#fff;border:1px solid var(--line);padding:2px 6px;border-radius:4px">F12</kbd> (or right-click anywhere and pick <b>Inspect</b>) to open Developer Tools.</div>
+            <div><b>Step 3:</b> Click the <b>Application</b> tab at top &rarr; expand <b>Local Storage</b> on the left &rarr; click <b>https://hopvisor.com</b>. Look for the key named <code>token</code>, <code>auth_token</code>, or <code>sb-...-auth-token</code>, and copy its value!</div>
+          </div>
+          <p style="color:var(--dim);font-size:12px;margin-bottom:16px"><i>Tip: You can also check the <b>Network</b> tab in Developer Tools, click any request to hopvisor.com, and copy the <code>Authorization: Bearer &lt;token&gt;</code> header.</i></p>
+          <div class="dlg-foot">
+            <button class="btn" data-act="dlgcancel">Close</button>
+            <button class="btn primary" data-act="mcptoken">Paste Token Now</button>
+          </div>
+        </div>
+      </div>`;
+      dlg.showModal();
       return;
     }
     if (a === "whopclip") {
@@ -3034,12 +3073,15 @@ function drawCampaigns() {
     <div class="whop-mcp-banner ${_mcpStatus.connected ? "connected" : ""}">
       <div style="display:flex;align-items:center;gap:10px">
         <span class="whop-badge">WHOP MCP</span>
-        <span>${_mcpStatus.connected ? "Connected to <b>Hopvisor MCP</b> (<code>https://mcp.hopvisor.com/mcp</code>). Searching live Whop Bounty Rewards." : "Connect <b>Hopvisor MCP</b> to search live Whop campaigns with AI:"}</span>
+        <span>${_mcpStatus.connected ? "Connected to <b>Hopvisor MCP</b> (<code>https://mcp.hopvisor.com/mcp</code>). Live Whop Rewards active." : "Connect your <b>Hopvisor Token</b> to query live Whop campaigns via MCP:"}</span>
       </div>
-      <div>
-        ${_mcpStatus.connected ? `<span class="pill ok">● Connected</span>` : `
-          <button type="button" class="btn primary sm" data-act="mcpauth">Connect Hopvisor (OAuth)</button>
-          <button type="button" class="btn sm" data-act="mcptoken">Paste Token</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${_mcpStatus.connected ? `
+          <span class="pill ok">● Connected</span>
+          <button type="button" class="btn sm" data-act="mcpdisconnect">Disconnect</button>
+        ` : `
+          <button type="button" class="btn primary sm" data-act="mcptoken">Set Hopvisor Token</button>
+          <button type="button" class="btn sm" data-act="tokenguide">How to get token</button>
         `}
       </div>
     </div>

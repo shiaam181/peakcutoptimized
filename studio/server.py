@@ -1822,6 +1822,11 @@ def mcp_hopvisor_set_token(body: dict = Body(...)):
     return mcp_hopvisor.set_token(token)
 
 
+@app.post("/api/mcp/hopvisor/disconnect")
+def mcp_hopvisor_disconnect():
+    return {"ok": mcp_hopvisor.disconnect()}
+
+
 @app.get("/api/mcp/oauth/callback")
 def mcp_oauth_callback(code: str = "", error: str = ""):
     if error or not code:
