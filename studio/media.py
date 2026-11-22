@@ -95,13 +95,18 @@ class _Quiet:
     def error(self, m): pass
 
 
+def cookie_opts() -> dict:
+    """The YouTube cookies an admin saved (Settings, Connected apps), if any. yt-dlp only sends them to YouTube."""
+    return {"cookiefile": str(config.YT_COOKIES)} if config.YT_COOKIES.is_file() else {}
+
+
 def _ydl(opts):
     import yt_dlp
     # a channel or playlist link is answered as "a list" straight away, never walked video by video
     return yt_dlp.YoutubeDL({"noplaylist": True, "quiet": True, "no_warnings": True, "logger": _Quiet(),
                              "extract_flat": "in_playlist", "playlistend": 1, "socket_timeout": 60,
                              "retries": 10, "fragment_retries": 10,
-                             "concurrent_fragment_downloads": 4, "js_runtimes": {"node": {}}, **opts})
+                             "concurrent_fragment_downloads": 4, "js_runtimes": {"node": {}}, **cookie_opts(), **opts})
 
 
 def _video_format(height):
@@ -360,11 +365,20 @@ def load_audio(wav: Path) -> np.ndarray:
     return data
 
 
+LOUDNESS_PIECE = 600       # seconds of audio worked out at a time
+
+
 def loudness_per_second(audio: np.ndarray) -> np.ndarray:
-    """RMS level in dB for each second of audio."""
+    """RMS level in dB for each second of audio.
+
+    Worked out ten minutes at a time. All at once, a day-long video needs a table of several gigabytes (one
+    float per sample), which most computers cannot find room for; this way it needs about 40 MB, whatever the length."""
     n = len(audio) // 16000
     if n == 0:
         return np.zeros(1, dtype=np.float32)
-    x = audio[: n * 16000].reshape(n, 16000).astype(np.float32) / 32768.0
-    rms = np.sqrt((x ** 2).mean(axis=1) + 1e-10)
-    return (20 * np.log10(rms)).astype(np.float32)
+    out = np.empty(n, dtype=np.float32)
+    for a in range(0, n, LOUDNESS_PIECE):
+        b = min(n, a + LOUDNESS_PIECE)
+        x = audio[a * 16000: b * 16000].reshape(b - a, 16000).astype(np.float32) / 32768.0
+        out[a:b] = 20 * np.log10(np.sqrt((x ** 2).mean(axis=1) + 1e-10))
+    return out

@@ -24,7 +24,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 
 from . import admin as admins
 from . import account, load
-from . import (accounts, ai, alerts, auth, config, creators, ctx, db, jobs, live, media, posting,
+from . import (accounts, ai, alerts, auth, brain, config, creators, ctx, db, jobs, live, media, posting,
                profiles, render, safe, transcribe, usage)
 
 from . import tools as _tools  # noqa: E402
@@ -943,6 +943,41 @@ def rerender(jid: str, cid: str, body: dict = Body(default={})):
     except (ValueError, TypeError) as e:
         raise HTTPException(400, str(e))
     return jobs.public(job)
+
+
+def _clip_or_404(jid: str, cid: str):
+    job = _job_or_404(jid)
+    clip = next((c for c in job["clips"] if c["id"] == cid), None)
+    if not clip:
+        raise HTTPException(404, "No such clip")
+    return job, clip
+
+
+@app.put("/api/jobs/{jid}/clips/{cid}/text")
+def clip_text(jid: str, cid: str, body: dict = Body(...)):
+    """Save a clip's title, description and hashtags. The video is not made again."""
+    job, clip = _clip_or_404(jid, cid)
+    _throttle("cliptext:" + ctx.uid(), 120, 600)
+    try:
+        jobs.save_post_text(job, clip, body)
+    except (ValueError, TypeError) as e:
+        raise HTTPException(400, str(e))
+    return jobs.public(job)
+
+
+@app.post("/api/jobs/{jid}/clips/{cid}/write")
+def clip_write(jid: str, cid: str):
+    """Ask the AI for a new title, description and hashtags for one clip. Returned to the page, not saved."""
+    job, clip = _clip_or_404(jid, cid)
+    _throttle("clipwrite:" + ctx.uid(), 20, 600, "That's a lot of rewrites in a short time. Wait a few minutes.")
+    usage.set_context(job.get("creator"), job.get("title") or "")
+    try:
+        return brain.post_text(jobs.spoken_in(job, clip), job.get("title") or "", job.get("uploader") or "",
+                               game=job.get("game") or None)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
 
 
 @app.post("/api/jobs/{jid}/retry-failed")

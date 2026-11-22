@@ -110,31 +110,15 @@ def on_clip_ready(job, clip):
 
 
 def _caption(clip, creator, platform=""):
-    desc = re.sub(r'#\S+', '', (clip.get("description") or "")).strip()
-    desc = re.sub(r'\s{2,}', ' ', desc).strip()
     footer = (creator.get("post_footer") or "").strip()
-    # YouTube Shorts algorithm strongly prefers clean descriptions without hashtag stuffing.
-    # Official YouTube guidance: tags belong in metadata tags parameter; spamming hashtags in description suppresses reach.
+    if clip.get("fixed_description") or clip.get("hashtags_in_description"):
+        return "\n\n".join(x for x in (clip.get("description", ""), footer) if x)
     if platform == "youtube":
+        desc = re.sub(r'#\S+', '', (clip.get("description") or "")).strip()
+        desc = re.sub(r'\s{2,}', ' ', desc).strip()
         return "\n\n".join(x for x in (desc, footer) if x)
-
-    raw_tags = [str(h).lstrip("#").strip() for h in clip.get("hashtags", []) if str(h).strip()]
-    plat_tags = []
-    if platform == "instagram":
-        plat_tags = ["reels", "trending"]
-    elif platform == "tiktok":
-        plat_tags = ["fyp", "trending"]
-
-    seen = set()
-    combined_tags = []
-    for t in raw_tags + plat_tags:
-        low = t.lower()
-        if low not in seen:
-            seen.add(low)
-            combined_tags.append(t)
-
-    tags_str = " ".join("#" + t for t in combined_tags[:8])
-    return "\n\n".join(x for x in (desc, tags_str, footer) if x)
+    tags = " ".join("#" + str(h).lstrip("#") for h in clip.get("hashtags", []))
+    return "\n\n".join(x for x in (clip.get("description", ""), tags, footer) if x)
 
 
 def _post(p):

@@ -8,6 +8,7 @@
 
 Every service is asked for the same thing: JSON that follows a small schema. Gemini takes the schema directly.
 The others are told the schema in the prompt and asked for a JSON object, which works with any chat model."""
+import base64
 import json
 import os
 import re
@@ -205,7 +206,24 @@ def test() -> dict:
 
 
 class AIError(RuntimeError):
-    pass
+    """A failed AI call. `wait` is how many seconds the service asked us to wait before trying again, when it
+    said so (a Retry-After header, or Gemini's retryDelay)."""
+    def __init__(self, message, wait=None, daily=False):
+        super().__init__(message)
+        self.wait = wait
+        self.daily = daily        # the limit is for the whole day, so waiting a minute won't help
+
+
+def asked_wait(r) -> float | None:
+    """How long the service asked us to wait, in seconds, or None when it didn't say."""
+    try:
+        v = (r.headers.get("retry-after") or "").strip()
+        if v:
+            return max(0.0, float(v))
+    except (ValueError, AttributeError):
+        pass
+    m = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"', getattr(r, "text", "") or "")
+    return float(m.group(1)) if m else None
 
 
 _problems = {}
@@ -264,7 +282,60 @@ def clear_problem(uid=None):
 
 def _fail(r, model):
     text = r.text[:300].replace(key() or "\0", "<key>")
-    raise AIError(f"HTTP {r.status_code} {text}")
+    limited = r.status_code in (429, 503)
+    raise AIError(f"HTTP {r.status_code} {text}", wait=asked_wait(r) if limited else None,
+                  daily=limited and bool(re.search(r"PerDay|per day|daily", r.text or "", re.I)))
+
+
+def _from_events(text: str) -> dict:
+    """Read an answer out of a server-sent event stream."""
+    parts, usage, calls = [], {}, {}
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line.startswith("data:"):
+            continue
+        chunk = line[5:].strip()
+        if not chunk or chunk == "[DONE]":
+            continue
+        try:
+            d = json.loads(chunk)
+        except ValueError:
+            continue
+        usage = d.get("usage") or usage
+        for ch in d.get("choices") or []:
+            for piece in ((ch.get("message") or {}), (ch.get("delta") or {})):
+                if piece.get("content"):
+                    parts.append(piece["content"])
+                for call in piece.get("tool_calls") or []:
+                    i = call.get("index", 0)
+                    calls[i] = calls.get(i, "") + ((call.get("function") or {}).get("arguments") or "")
+    message = {"content": "".join(parts)}
+    if not message["content"] and calls:
+        message["content"] = "".join(calls.values())
+    return {"choices": [{"message": message}], "usage": usage}
+
+
+def _openai_body(r):
+    """The answer, whether the service sent plain JSON or an event stream.
+
+    Some OpenAI-compatible servers answer with a stream of events unless the
+    request says otherwise, so the answer is read from whichever shape arrived.
+    A model that answers with a tool call instead of a message leaves the JSON in
+    the call's arguments, so that is used too."""
+    try:
+        data = r.json()
+    except ValueError:
+        data = _from_events(r.text)
+    for ch in data.get("choices") or []:
+        msg = ch.get("message") or {}
+        if (msg.get("content") or "").strip():
+            continue
+        for call in msg.get("tool_calls") or []:
+            args = (call.get("function") or {}).get("arguments")
+            if args:
+                msg["content"] = args
+                break
+    return data
 
 
 # ---------------------------------------------------------------- the schema, said in words for chat models
@@ -299,16 +370,16 @@ def _parse(text):
 
 
 # ---------------------------------------------------------------- one call
-def call(model: str, prompt: str, schema: dict):
+def call(model: str, prompt: str, schema: dict, timeout=None):
     """Ask one model. Returns (the parsed JSON answer, tokens sent, tokens written back)."""
     how = PROVIDERS[provider()][2]
-    return {"gemini": _gemini, "openai": _openai, "anthropic": _anthropic}[how](model, prompt, schema)
+    return {"gemini": _gemini, "openai": _openai, "anthropic": _anthropic}[how](model, prompt, schema, timeout=timeout)
 
 
-def _gemini(model, prompt, schema):
+def _gemini(model, prompt, schema, timeout=None):
     body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.4, "responseMimeType": "application/json", "responseSchema": schema}}
-    r = httpx.post(f"{base_url()}/{model}:generateContent", json=body, headers={"x-goog-api-key": key()}, timeout=120)
+    r = httpx.post(f"{base_url()}/{model}:generateContent", json=body, headers={"x-goog-api-key": key()}, timeout=timeout or 120)
     if r.status_code != 200:
         _fail(r, model)
     data = r.json()
@@ -318,9 +389,9 @@ def _gemini(model, prompt, schema):
     return json.loads(text), sent, max(0, int(u.get("totalTokenCount") or 0) - sent)   # the answer, and any thinking billed with it
 
 
-def _openai(model, prompt, schema):
+def _openai(model, prompt, schema, timeout=None):
     headers = {"Authorization": f"Bearer {key()}"} if key() else {}
-    body = {"model": model, "messages": [{"role": "user", "content": _wrapped(prompt, schema)}]}
+    body = {"model": model, "messages": [{"role": "user", "content": _wrapped(prompt, schema)}], "stream": False}
     # Most services accept these two extras; a few models refuse one of them, so they are dropped on a refusal.
     extras = [{"temperature": 0.4, "response_format": {"type": "json_object"}}, {"response_format": {"type": "json_object"}}, {}]
     r = None
@@ -328,25 +399,25 @@ def _openai(model, prompt, schema):
     if not endpoint.endswith("/chat/completions"):
         endpoint = f"{endpoint}/chat/completions"
     for extra in extras:
-        r = httpx.post(endpoint, json={**body, **extra}, headers=headers, timeout=180)
+        r = httpx.post(endpoint, json={**body, **extra}, headers=headers, timeout=timeout or 180)
         if r.status_code == 404 and "/v1/" not in endpoint:
             # Fallback for base URLs provided without /v1
             alt_endpoint = endpoint.replace("/chat/completions", "/v1/chat/completions")
-            r = httpx.post(alt_endpoint, json={**body, **extra}, headers=headers, timeout=180)
+            r = httpx.post(alt_endpoint, json={**body, **extra}, headers=headers, timeout=timeout or 180)
             if r.status_code == 200:
                 endpoint = alt_endpoint
         if r.status_code not in (400, 422):
             break
     if r.status_code != 200:
         _fail(r, model)
-    data = r.json()
+    data = _openai_body(r)
     u = data.get("usage") or {}
     return _parse(data["choices"][0]["message"].get("content")), int(u.get("prompt_tokens") or 0), int(u.get("completion_tokens") or 0)
 
 
-def _anthropic(model, prompt, schema):
+def _anthropic(model, prompt, schema, timeout=None):
     body = {"model": model, "max_tokens": 8192, "messages": [{"role": "user", "content": _wrapped(prompt, schema)}]}
-    r = httpx.post(f"{base_url()}/messages", json=body, timeout=180,
+    r = httpx.post(f"{base_url()}/messages", json=body, timeout=timeout or 180,
                    headers={"x-api-key": key(), "anthropic-version": "2023-06-01"})
     if r.status_code != 200:
         _fail(r, model)
@@ -354,3 +425,55 @@ def _anthropic(model, prompt, schema):
     text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
     u = data.get("usage") or {}
     return _parse(text), int(u.get("input_tokens") or 0), int(u.get("output_tokens") or 0)
+
+
+def see(prompt: str, image: bytes, timeout: float | None = None) -> tuple[str, int, int]:
+    """Ask one model about one picture: (the answer as text, tokens in, tokens out).
+
+    Nothing is broken by a service that cannot look at pictures, or a model that is only text: the answer
+    comes back empty, or says something the caller does not understand, and the caller carries on without
+    it. The picture is a JPEG, passed as base64 inside the ordinary message."""
+    if not ready() or not image or not models():
+        return "", 0, 0
+    model = models()[0]
+    b64 = base64.b64encode(image).decode()
+    how = PROVIDERS[provider()][2]
+    if how == "gemini":
+        body = {"contents": [{"role": "user", "parts": [
+            {"text": prompt},
+            {"inline_data": {"mimeType": "image/jpeg", "data": b64}}]}]}
+        r = httpx.post(f"{base_url()}/{model}:generateContent", json=body,
+                       headers={"x-goog-api-key": key()}, timeout=timeout or 120)
+        if r.status_code != 200:
+            _fail(r, model)
+        data = r.json()
+        text = "".join(p.get("text", "") for p in data["candidates"][0]["content"]["parts"])
+        u = data.get("usageMetadata", {})
+        sent = int(u.get("promptTokenCount") or 0)
+        return text, sent, max(0, int(u.get("totalTokenCount") or 0) - sent)
+    if how == "anthropic":
+        body = {"model": model, "max_tokens": 300, "messages": [{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}},
+            {"type": "text", "text": prompt}]}]}
+        r = httpx.post(f"{base_url()}/messages", json=body, timeout=timeout or 120,
+                       headers={"x-api-key": key(), "anthropic-version": "2023-06-01"})
+        if r.status_code != 200:
+            _fail(r, model)
+        data = r.json()
+        text = "".join(p.get("text", "") for p in data.get("content") or [] if p.get("type") == "text")
+        u = data.get("usage") or {}
+        return text, int(u.get("input_tokens") or 0), int(u.get("output_tokens") or 0)
+    headers = {"Authorization": f"Bearer {key()}"} if key() else {}
+    body = {"model": model, "stream": False, "messages": [{"role": "user", "content": [
+        {"type": "text", "text": prompt},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + b64}}]}]}
+    endpoint = base_url()
+    if not endpoint.endswith("/chat/completions"):
+        endpoint = f"{endpoint}/chat/completions"
+    r = httpx.post(endpoint, json=body, headers=headers, timeout=timeout or 120)
+    if r.status_code != 200:
+        _fail(r, model)
+    data = _openai_body(r)
+    text = (data["choices"][0]["message"].get("content") or "")
+    u = data.get("usage") or {}
+    return text, int(u.get("prompt_tokens") or 0), int(u.get("completion_tokens") or 0)

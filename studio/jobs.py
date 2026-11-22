@@ -7,11 +7,12 @@ import queue
 import shutil
 import threading
 import time
+import re
 import traceback
 import uuid
 from pathlib import Path
 
-from . import brain, config, creators, ctx, load, media, render, roman, safe, transcribe, usage
+from . import brain, config, creators, ctx, facecam, fetch_model, games, hashtags, load, media, quality, render, roman, safe, transcribe, usage
 
 class _FairQueue:
     """Whose video is next. Each person has their own line and the lines take turns, so someone who adds ten
@@ -107,8 +108,9 @@ _by_user: dict = {}                       # user -> {job id: job}: listing one p
 _lock = threading.RLock()
 on_clip_ready: list = []   # callbacks (job, clip), run once when a clip first finishes
 
-DEFAULTS = {"max_clips": 6, "min_len": 30, "max_len": 50, "style": "bounce", "layout": "auto", "quality": 1080,
-            "range_start": None, "range_end": None, "campaign": "", "req_hook": "", "req_tags": ""}
+DEFAULTS = {"max_clips": 6, "min_len": 15, "max_len": 60, "style": "bounce", "layout": "auto", "quality": 1080,
+            "range_start": None, "range_end": None, "campaign": "", "req_hook": "", "req_tags": "",
+            "captions": True, "hook_text": "", "description_text": "", "lang": "en"}
 
 
 LIMITS = {"max_clips": (1, 20), "min_len": (5, 120), "max_len": (10, 180), "quality": (360, 2160)}
@@ -118,6 +120,14 @@ def clean_options(options) -> dict:
     """Only known settings, each inside its allowed range. Raises ValueError on nonsense."""
     out = {}
     for k, v in (options if isinstance(options, dict) else {}).items():
+        if k == "captions":
+            if not isinstance(v, bool):
+                raise ValueError("Captions must be on or off.")
+            out[k] = v
+            continue
+        if k in ("hook_text", "description_text"):     # kept even when empty: it clears the creator's own text for this video
+            out[k] = creators.clean_hook(v) if k == "hook_text" else creators.clean_description(v)
+            continue
         if k not in DEFAULTS or v in ("", None):
             continue
         if k in LIMITS:
@@ -130,6 +140,8 @@ def clean_options(options) -> dict:
         elif k in ("campaign", "req_hook", "req_tags"):
             out[k] = str(v).strip()[:2000]
             continue
+        elif k == "lang":
+            v = v if fetch_model.known(v) else DEFAULTS["lang"]
         else:                                    # range_start, range_end: seconds into the video
             v = float(v)
             if not math.isfinite(v) or v < 0:
@@ -164,6 +176,26 @@ def public(job) -> dict:
     return out
 
 
+def _put_in_place(tmp: Path, target: Path):
+    """Move the freshly written job.json over the old one.
+
+    Windows refuses this ("Access is denied") for a moment whenever anything else has the old file open: a virus
+    scanner, the search indexer, or another part of PeakCut reading it. A download saves many times a second, so it
+    happens, and it used to stop the whole video. So it is tried again a few times, and if the file is still busy
+    it is written in place; as a last resort this save is skipped, because the next one carries the same news."""
+    for i in range(8):
+        try:
+            tmp.replace(target)
+            return
+        except PermissionError:
+            time.sleep(0.05 * (i + 1))
+    try:
+        target.write_text(tmp.read_text(encoding="utf-8"), encoding="utf-8")
+        tmp.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def save(job):
     ctx.bump(job.get("user"))
     with _lock:
@@ -178,7 +210,7 @@ def save(job):
             return
         tmp = d / "job.json.tmp"
         tmp.write_text(text, encoding="utf-8")
-        tmp.replace(d / "job.json")
+        _put_in_place(tmp, d / "job.json")
 
 
 def _set(job, **kw):
@@ -384,6 +416,77 @@ def request_render(jid, cid, changes: dict):
     clip.update(new, status="queued")
     save(job)
     _q.put(("clip", jid, cid))
+
+
+def clean_hashtags(v) -> list:
+    """Hashtags typed by a person ("#funny gaming") or sent by the page as a list: plain words, at most 8."""
+    if isinstance(v, str):
+        v = v.split()
+    if not isinstance(v, list):
+        raise ValueError("Hashtags must be words separated by spaces.")
+    tags = [re.sub(r"\W", "", str(h))[:30] for h in v[:50] if isinstance(h, (str, int))]
+    return [t for t in tags if t][:8]
+
+
+def save_post_text(job, clip, changes: dict):
+    """Change a clip's title, description and hashtags without making the clip again. Posting reads them
+    from the clip when it uploads, so the next post (or one still waiting in the queue) uses the new text."""
+    text = {k: str(changes[k] or "")[:{"title": 100, "description": 2000}[k]] for k in ("title", "description") if k in changes}
+    if "hashtags" in changes:
+        text["hashtags"] = clean_hashtags(changes["hashtags"])
+    if clip.get("hashtags_in_description") and not clip.get("fixed_description") and text:
+        # This clip's description ends with its hashtags, and posting does not add them again. So the
+        # description is put back together from the Hashtags box: the words, then one line of tags.
+        desc = hashtags._TAG_IN_TEXT.sub("", text.get("description", clip.get("description") or "")).strip()
+        line = " ".join("#" + t for t in text.get("hashtags", clip.get("hashtags") or []))
+        text["description"] = ((desc + "\n\n" + line).strip() if desc else line)[:2000]
+    with _lock:
+        clip.update(text)
+    save(job)
+    side = Path(job["dir"]) / "clips" / f"{clip['id']}.json"   # the copy that sits next to the video file
+    try:
+        if side.is_file():
+            side.write_text(json.dumps({**json.loads(side.read_text(encoding="utf-8")), **text}, indent=1), encoding="utf-8")
+    except (OSError, ValueError):
+        pass
+
+
+def _f(v, default=0.0):
+    try:
+        f = float(v)
+        return f if math.isfinite(f) else default
+    except (TypeError, ValueError):
+        return default
+
+
+def spoken_in(job, clip) -> str:
+    """What is said during a clip, from the video's transcript."""
+    try:
+        words = json.loads((Path(job["dir"]) / "words.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    return " ".join(str(w.get("w", "")) for w in words
+                    if isinstance(w, dict) and clip["start"] - 0.5 <= _f(w.get("s")) <= clip["end"] + 0.5)
+
+
+def _facecam(job) -> list | None:
+    """Where the webcam is in the source: once for the whole video, for every clip of it.
+
+    Only a sure answer is used. A box that is a scoreboard drawn over the game would
+    put a picture of a scoreboard in the corner of the clip. One frame is also shown to
+    the AI, which tells a person from a game character better than any measurement can;
+    what it says is measured again on the picture, so it cannot do any harm."""
+    path = job.get("source_path")
+    if not path or not Path(path).is_file():
+        return None
+    try:
+        box = facecam.detect(path, ask=brain.look_for_facecam)
+    except Exception:  # noqa: BLE001 - a missing facecam is not a failure
+        return None
+    if not box or box.get("conf") != "high":
+        return None
+    job["facecam"] = [box["x"], box["y"], box["w"], box["h"]]
+    return job["facecam"]
 
 
 def render_one(job, clip, words):
@@ -683,6 +786,10 @@ def _run_job(job):
                     _set(job, progress=max(job["progress"], 0.14 + 0.78 * ((a_ - lo) + p * (b_ - a_)) / max(1, hi - lo)))
             heard[i] = ahead.submit(ctx.bind(transcribe.transcribe), audio[a_:b_], tp)
 
+    game = games.detect(job.get("title", ""))
+    static = quality.static_ranges(src_file) if config.SKIP_STATIC and src_file else []
+    face = False
+
     for bi, (a, b) in enumerate(blocks):
         if bi < done_blocks:
             continue                      # transcribed and checked by the AI before the restart
@@ -710,14 +817,31 @@ def _run_job(job):
         s0 = int((a - lo) / 16000)
         found, ai = brain.find_clips(bw, db[s0: s0 + int((b - a) / 16000) + 1], (b - a) / 16000, job["title"],
                                      job["uploader"], quota, int(o["min_len"]), int(o["max_len"]), notes.append,
-                                     campaign=str(o.get("campaign") or ""), req_hook=str(o.get("req_hook") or ""), req_tags=str(o.get("req_tags") or ""))
+                                     campaign=str(o.get("campaign") or ""), req_hook=str(o.get("req_hook") or ""), req_tags=str(o.get("req_tags") or ""),
+                                     game=game)
         tokens += ai.get("tokens", 0)
         model = ai.get("model") or model
         if ai.get("note"):
             notes.append(ai["note"])
         for c in found:
-            c.update(id=f"clip{len(job['clips']) + 1:02d}", start=round(c["start"] + shift, 2),
-                     end=round(c["end"] + shift, 2), style=o["style"], layout=o["layout"], status="queued", version=0)
+            s, e = round(c["start"] + shift, 2), round(c["end"] + shift, 2)
+            if static and quality.static_overlap(s, e, static) > 2.0:
+                continue             # clip sits inside an ad break or still slate
+            c.update(id=f"clip{len(job['clips']) + 1:02d}", start=s,
+                     end=e, style=o["style"], layout=o["layout"],
+                     captions=o.get("captions", True), status="queued", version=0)
+            if o.get("hook_text"):        # the person's own big text, on every clip, in place of the AI's
+                c["hook"] = o["hook_text"]
+            if o.get("description_text"):  # ...and their own description, exactly as written
+                c["description"], c["fixed_description"] = o["description_text"], True
+            else:                          # no description of their own: 3 to 5 fitting hashtags go at the end of the AI's
+                hashtags.apply(c, words, job["title"], job["uploader"], game)
+            # Only the gameplay layout uses a webcam, so it is only looked for then, and only once: a
+            # stream with no webcam is not looked for again on every clip of it.
+            if o["layout"] == "gameplay" and face is False:
+                face = _facecam(job)
+            if face:
+                c["facecam"] = face
             job["clips"].append(c)
             futures.append((renders.submit(ctx.bind(make), c, list(words)), c))
         job["ai"] = {"model": model, "tokens": tokens, "note": "", "log": notes[-5:]}
