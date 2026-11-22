@@ -83,16 +83,15 @@ def ensure(lang: str = DEFAULT, start: bool = True) -> None:
 
 
 def _save(lang: str, dest) -> str:
-    """Save the archive to dest, giving up if the connection goes quiet for WAIT seconds. Returns its SHA-256."""
+    """Save the archive to dest, giving up if the connection goes quiet. Returns its SHA-256."""
     st, digest = state[lang], hashlib.sha256()
-    with urllib.request.urlopen(MODELS[lang][2], timeout=WAIT) as r, open(dest, "wb") as f:
-        total, got = int(r.headers.get("Content-Length") or 0), 0
-        while chunk := r.read(1 << 20):
-            f.write(chunk)
+    def _reporthook(blocks, size, total):
+        if total > 0:
+            st["percent"] = min(99, int(blocks * size * 100 // total))
+    urllib.request.urlretrieve(MODELS[lang][2], dest, _reporthook)
+    with open(dest, "rb") as f:
+        while chunk := f.read(1 << 20):
             digest.update(chunk)
-            got += len(chunk)
-            if total > 0:
-                st["percent"] = min(99, got * 100 // total)
     return digest.hexdigest()
 
 
