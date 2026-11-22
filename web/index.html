@@ -2435,6 +2435,7 @@ function drawClipDlg(full) {
 }
 $("#clipdlg").addEventListener("close", () => { $("#clipdlg").innerHTML = ""; D.jid = null; });
 $("#clipdlg").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+$("#formdlg").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
 /* ============================================================ render + polling */
 function render() {
@@ -2703,7 +2704,11 @@ document.addEventListener("click", async e => {
     if (a === "tab") return setTab(d.t);
     if (a === "pickfile") return $("#file").click();
     if (a === "addmore") { const u = $("#url"); return u && !u.value ? (u.focus(), toast("Paste another link, or drop a file anywhere on the box.")) : $("#file").click(); }
-    if (a === "closedlg") return $("#clipdlg").close();
+    if (a === "dlgcancel" || a === "closedlg") {
+      if ($("#formdlg")?.open) $("#formdlg").close();
+      if ($("#clipdlg")?.open) $("#clipdlg").close();
+      return;
+    }
     if (a === "openclip") return openClip(d.j, d.c);
     if (a === "newcreator") {
       const dlg = $("#formdlg");
