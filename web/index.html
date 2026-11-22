@@ -896,6 +896,18 @@ dialog[open]{animation:fadein .16s ease}
 .btn-gift{background:var(--muted);color:var(--dim);border:1px solid var(--line);height:34px;padding:0 12px;border-radius:var(--r-sm);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .btn-gift:hover{background:var(--line);color:var(--text)}
 
+
+/* ---- Whop MCP Styling ---- */
+.whop-mcp-banner{background:var(--frame);color:var(--frame-text);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.whop-mcp-banner.connected{background:var(--good-soft);color:var(--good);border:1px solid rgba(15,138,87,.2)}
+.whop-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:4px;background:#FF6243;color:#fff}
+.whop-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s ease}
+.whop-card:hover{border-color:#FF6243}
+.whop-banner{position:relative;height:120px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.whop-btn-clip{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;color:#fff;background:#FF6243;padding:10px 14px;border:0;border-radius:var(--r-sm);cursor:pointer;transition:background-color .15s ease}
+.whop-btn-clip:hover{background:#E04A2D}
+.whop-rates{display:flex;gap:10px;background:var(--muted);padding:8px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:600;color:var(--dim);margin:6px 0}
+
 </style>
 </head>
 <body>
@@ -2508,6 +2520,71 @@ document.addEventListener("click", async e => {
     if (a === "go") { closePops(); return go(d.v, d.tab); }
 
     if (a === "camptab") { S.campTab = d.tab; return drawCampaigns(); }
+
+    if (a === "mcpauth") {
+      const url = _mcpStatus.auth_url || "https://mcp.hopvisor.com/authorize";
+      window.open(url, "hopvisor_oauth", "width=500,height=650");
+      return;
+    }
+    if (a === "mcptoken") {
+      const tok = prompt("Enter your Hopvisor Bearer Token:");
+      if (tok) {
+        await send("/api/mcp/hopvisor/token", {token: tok});
+        toast("Hopvisor Token saved!", "ok");
+        return loadCampaigns();
+      }
+      return;
+    }
+    if (a === "whopclip") {
+      const camp = (_whopData || []).find(x => x.id === d.id);
+      if (!camp) return;
+      const dlg = $("#formdlg");
+      dlg.innerHTML = `<div class="dlg-box" style="max-width:500px">
+        <div class="dlg-head"><h3>Make Clips for ${esc(camp.title)}</h3><button class="icon-btn" data-act="dlgcancel">${ic("x")}</button></div>
+        <div class="dlg-body">
+          <div style="background:${camp.banner_bg};padding:14px;border-radius:var(--r);color:#fff;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;opacity:.9">WHOP CONTENT REWARDS</div>
+            <div style="font-size:16px;font-weight:700">${esc(camp.title)}</div>
+            <div style="font-size:12px;margin-top:4px">Payout: <b>$${camp.rate_per_1k} per 1k views</b> · Budget: <b>$${Number(camp.budget_left).toLocaleString()}</b> left</div>
+          </div>
+          <label class="f" style="margin-bottom:12px">Link or Stream to Clip
+            <input id="whop_stream_url" value="${esc(camp.whop_url && camp.whop_url !== "https://whop.com" ? camp.whop_url : (camp.streamer ? "https://www.twitch.tv/kaicenat" : ""))}" placeholder="Paste YouTube, Twitch, or Kick stream link">
+          </label>
+          <label class="f" style="margin-bottom:12px">Apply to Streamer / Workspace
+            <select id="whop_cid">
+              <option value="">Create new / Current workspace</option>
+              ${S.creators.map(cr => `<option value="${esc(cr.id)}">${esc(cr.name)}</option>`).join("")}
+            </select>
+          </label>
+          <div style="background:var(--muted);padding:10px 14px;border-radius:var(--r-sm);font-size:12px;margin-bottom:16px">
+            <div><b>Auto-configured Tags:</b> <code>${esc(camp.tags || "#Whop #WhopRewards")}</code></div>
+            <div style="margin-top:4px"><b>Hook Text:</b> ${esc(camp.hook_text || "WHOP REWARDS")}</div>
+          </div>
+          <div class="dlg-foot">
+            <button class="btn" data-act="dlgcancel">Cancel</button>
+            <button class="btn primary" data-act="whopclipstart" data-id="${esc(camp.id)}">${ic("scissors")} Start Clipping Now</button>
+          </div>
+        </div>
+      </div>`;
+      dlg.showModal();
+      return;
+    }
+    if (a === "whopclipstart") {
+      const streamUrl = $("#whop_stream_url") ? $("#whop_stream_url").value.trim() : "";
+      const cid = $("#whop_cid") ? $("#whop_cid").value : "";
+      const res = await send("/api/mcp/whop/prepare-clip", {campaign_id: d.id, creator_id: cid});
+      $("#formdlg").close();
+      go("overview");
+      const urlInput = $("#url");
+      if (urlInput) {
+        urlInput.value = streamUrl || res.suggested_stream || "https://www.twitch.tv/kaicenat";
+        urlInput.focus();
+        if (typeof onLink === "function") onLink(urlInput);
+      }
+      toast(`Whop Campaign attached! Rate: $${res.rate_per_1k}/1k views. Ready to clip.`, "ok");
+      return;
+    }
+
     if (a === "campopen") { return openCampaignModal(d.id); }
     if (a === "campadd") { $("#formdlg").close(); return openEnrollModal(d.id); }
     if (a === "campconfirm") {
@@ -2899,12 +2976,21 @@ $("#main").addEventListener("scroll", () => $(".topbar").classList.toggle("stuck
 /* ============================================================ Campaigns Marketplace */
 let _campData = { catalog: [], enrolled: [] };
 
+let _mcpStatus = { connected: false, auth_url: "" };
+let _whopData = [];
+
 async function loadCampaigns() {
   try {
     _campData = await api("/api/campaigns");
   } catch (e) {
     console.error("Campaigns load error:", e);
   }
+  try {
+    _mcpStatus = await api("/api/mcp/hopvisor/status");
+  } catch {}
+  try {
+    _whopData = await api("/api/mcp/whop/campaigns");
+  } catch {}
   drawCampaigns();
 }
 
@@ -2935,7 +3021,82 @@ function drawCampaigns() {
     return ic("link");
   }).join("");
 
-  const content = S.campTab === "find" ? `
+  
+  let whopFiltered = _whopData.slice();
+  if (S.whopSearch) {
+    const wq = S.whopSearch.toLowerCase();
+    whopFiltered = whopFiltered.filter(c => (c.title + " " + c.brand + " " + (c.tags || "") + " " + (c.category || "")).toLowerCase().includes(wq));
+  }
+  if (S.whopPlat) whopFiltered = whopFiltered.filter(c => (c.platforms || []).includes(S.whopPlat));
+  if (S.whopMinRate) whopFiltered = whopFiltered.filter(c => (c.rate_per_1k || 0) >= S.whopMinRate);
+
+  const whopContent = `
+    <div class="whop-mcp-banner ${_mcpStatus.connected ? "connected" : ""}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="whop-badge">WHOP MCP</span>
+        <span>${_mcpStatus.connected ? "Connected to <b>Hopvisor MCP</b> (<code>https://mcp.hopvisor.com/mcp</code>). Searching live Whop Bounty Rewards." : "Connect <b>Hopvisor MCP</b> to search live Whop campaigns with AI:"}</span>
+      </div>
+      <div>
+        ${_mcpStatus.connected ? `<span class="pill ok">● Connected</span>` : `
+          <button type="button" class="btn primary sm" data-act="mcpauth">Connect Hopvisor (OAuth)</button>
+          <button type="button" class="btn sm" data-act="mcptoken">Paste Token</button>
+        `}
+      </div>
+    </div>
+    <div class="camp-bar">
+      <div class="camp-search">
+        ${ic("search")}
+        <input id="whopSearchInput" placeholder="Search Whop campaigns (trading, gaming, AI, podcast, $2/1k)..." value="${esc(S.whopSearch || "")}">
+      </div>
+      <select class="camp-sort" id="whopPlatSelect">
+        <option value=""${!S.whopPlat ? " selected" : ""}>All platforms</option>
+        <option value="tiktok"${S.whopPlat === "tiktok" ? " selected" : ""}>TikTok</option>
+        <option value="youtube"${S.whopPlat === "youtube" ? " selected" : ""}>YouTube Shorts</option>
+        <option value="instagram"${S.whopPlat === "instagram" ? " selected" : ""}>Instagram Reels</option>
+      </select>
+      <select class="camp-sort" id="whopRateSelect">
+        <option value="0"${!S.whopMinRate ? " selected" : ""}>Any payout rate</option>
+        <option value="1.5"${S.whopMinRate === 1.5 ? " selected" : ""}>$1.50+ / 1k views</option>
+        <option value="2.0"${S.whopMinRate === 2.0 ? " selected" : ""}>$2.00+ / 1k views</option>
+        <option value="2.5"${S.whopMinRate === 2.5 ? " selected" : ""}>$2.50+ / 1k views</option>
+      </select>
+    </div>
+    <div class="camp-grid">
+      ${whopFiltered.map(c => `
+        <div class="whop-card">
+          <div class="whop-banner" style="background:${c.banner_bg}">
+            <div class="camp-banner-top">
+              <span class="camp-badge">${esc(c.badge || "Whop Bounty")}</span>
+              <span class="camp-pool-badge">${esc(c.pool_badge || `$${c.rate_per_1k}/1k`)}</span>
+            </div>
+            <div>
+              <div class="camp-banner-text">${esc(c.title)}</div>
+              <div class="camp-banner-sub">${esc(c.brand)} · ${esc(c.category || "Clipping")}</div>
+            </div>
+          </div>
+          <div class="camp-body">
+            <div class="camp-meta-top">
+              <span class="camp-brand"><span class="whop-badge" style="font-size:9px;padding:1px 4px">WHOP</span> ${esc(c.brand)}</span>
+              <span class="camp-budget">$${Number(c.budget_left).toLocaleString()} left of $${Number(c.prize_pool).toLocaleString()}</span>
+            </div>
+            <div class="whop-rates">
+              ${c.rate_tiktok ? `<span>TT: $${c.rate_tiktok}/1k</span>` : ""}
+              ${c.rate_youtube ? `<span>YT: $${c.rate_youtube}/1k</span>` : ""}
+              ${c.rate_instagram ? `<span>IG: $${c.rate_instagram}/1k</span>` : ""}
+            </div>
+            <div style="font-size:12px;color:var(--dim);line-height:1.4">${esc(c.rules || "")}</div>
+            <div class="camp-actions" style="margin-top:10px">
+              <button type="button" class="whop-btn-clip" data-act="whopclip" data-id="${esc(c.id)}">
+                ${ic("scissors")} Make clips from this campaign
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  const content = S.campTab === "whop" ? whopContent : S.campTab === "find" ? `
     <div class="camp-bar">
       <div class="camp-search">
         ${ic("search")}
@@ -3020,6 +3181,7 @@ function drawCampaigns() {
         </div>
         <div class="camp-tabs">
           <button type="button" class="camp-tab-btn ${S.campTab === "find" ? "on" : ""}" data-act="camptab" data-tab="find">Find campaigns</button>
+          <button type="button" class="camp-tab-btn ${S.campTab === "whop" ? "on" : ""}" data-act="camptab" data-tab="whop"><span class="whop-badge" style="font-size:9px;padding:1px 5px">WHOP</span> Whop Rewards (MCP)</button>
           <button type="button" class="camp-tab-btn ${S.campTab === "my" ? "on" : ""}" data-act="camptab" data-tab="my">My campaigns ${enrolled.length ? `<span class="badge-n">${enrolled.length}</span>` : ""}</button>
         </div>
       </div>
@@ -3042,6 +3204,27 @@ function drawCampaigns() {
   if (searchInput) {
     searchInput.addEventListener("input", e => {
       S.campSearch = e.target.value;
+      drawCampaigns();
+    });
+  }
+  const whopSearchInput = $("#whopSearchInput");
+  if (whopSearchInput) {
+    whopSearchInput.addEventListener("input", e => {
+      S.whopSearch = e.target.value;
+      drawCampaigns();
+    });
+  }
+  const whopPlatSelect = $("#whopPlatSelect");
+  if (whopPlatSelect) {
+    whopPlatSelect.addEventListener("change", e => {
+      S.whopPlat = e.target.value;
+      drawCampaigns();
+    });
+  }
+  const whopRateSelect = $("#whopRateSelect");
+  if (whopRateSelect) {
+    whopRateSelect.addEventListener("change", e => {
+      S.whopMinRate = Number(e.target.value) || 0;
       drawCampaigns();
     });
   }
