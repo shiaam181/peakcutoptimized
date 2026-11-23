@@ -1,0 +1,152 @@
+{
+  "accounts": [
+    {
+      "_id": "6affefe90102606c94aa88b2",
+      "userId": "6affefcf46f3e3c51070ff8d",
+      "profileId": {
+        "_id": "6affefcf46f3e3c51070ff8f",
+        "name": "Default",
+        "externalId": null
+      },
+      "connectedBy": "6affefcf46f3e3c51070ff8d",
+      "platform": "instagram",
+      "platformUserId": "29431827923095019",
+      "username": "latent_collected_clips",
+      "displayName": "Latent collected clips",
+      "profilePicture": "https://scontent-lhr6-2.cdninstagram.com/v/t51.82787-19/727558593_17887251447589522_5904239081613672977_n.jpg?stp=dst-jpg_s240x240_tt6&_nc_cat=105&_nc_map=urlgen_bucketless&ig_cache_key=GMGpXSuSqopEXIw-ABHCj6gpEvBRbmNDAQAB2402400j-ccb7-5&ccb=7-5&_nc_sid=669407&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy41NzYuQzMifQ%3D%3D&_nc_ohc=LaFXKGVap1UQ7kNvwFfIFUn&_nc_oc=Adog989y-8cCs1YgFJrhKyREhQ4IVRPH4xQhMZGH5YhuhllfIqtaHLBLWmmmJRgl5tA&_nc_zt=24&_nc_ht=scontent-lhr6-2.cdninstagram.com&edm=AP4hL3IEAAAA&_nc_gid=vle8cAjtaVvk9CkxxtoYmw&_nc_tpa=Q5bMBQIqknfbp2QLupED2p1RBKWKqIkYM_bU2FMFCjzYtByvH672q1-SokcyZ5L08E3ag9y_pmWKr7CSDQ&_nc_ct=RQosPBUCFQIAAAA&oh=00_AQTyQGzimWpJpw0M60wid0xD4oJR5RWEMbLMnzgIJKZLHQ&oe=6B09E2D4",
+      "profileUrl": "https://instagram.com/latent_collected_clips",
+      "isActive": true,
+      "permissions": [
+        "instagram_business_basic",
+        "instagram_business_manage_messages",
+        "instagram_business_content_publish",
+        "instagram_business_manage_insights",
+        "instagram_business_manage_comments"
+      ],
+      "metadata": {
+        "scope": "instagram_business_basic instagram_business_manage_messages instagram_business_content_publish instagram_business_manage_insights instagram_business_manage_comments",
+        "expires_in": 5184000,
+        "connectedAt": "2026-11-20T06:59:53.580Z",
+        "profileData": {
+          "id": "29431827923095019",
+          "bio": "Fan Page, clips taken from everywhere, ull c all clips in one page",
+          "website": null,
+          "username": "latent_collected_clips",
+          "extraData": {
+            "mediaCount": 113,
+            "accountType": "MEDIA_CREATOR",
+            "followsCount": 6,
+            "instagramScopedId": "17841477685637543"
+          },
+          "followersCount": 7,
+          "displayName": "Latent collected clips",
+          "profilePicture": "https://scontent-lhr6-2.cdninstagram.com/v/t51.82787-19/727558593_17887251447589522_5904239081613672977_n.jpg?stp=dst-jpg_s240x240_tt6&_nc_cat=105&_nc_map=urlgen_bucketless&ig_cache_key=GMGpXSuSqopEXIw-ABHCj6gpEvBRbmNDAQAB2402400j-ccb7-5&ccb=7-5&_nc_sid=669407&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy41NzYuQzMifQ%3D%3D&_nc_ohc=LaFXKGVap1UQ7kNvwFfIFUn&_nc_oc=Adog989y-8cCs1YgFJrhKyREhQ4IVRPH4xQhMZGH5YhuhllfIqtaHLBLWmmmJRgl5tA&_nc_zt=24&_nc_ht=scontent-lhr6-2.cdninstagram.com&edm=AP4hL3IEAAAA&_nc_gid=vle8cAjtaVvk9CkxxtoYmw&_nc_tpa=Q5bMBQIqknfbp2QLupED2p1RBKWKqIkYM_bU2FMFCjzYtByvH672q1-SokcyZ5L08E3ag9y_pmWKr7CSDQ&_nc_ct=RQosPBUCFQIAAAA&oh=00_AQTyQGzimWpJpw0M60wid0xD4oJR5RWEMbLMnzgIJKZLHQ&oe=6B09E2D4",
+          "profileUrl": "https://instagram.com/latent_collected_clips"
+        },
+        "instagramScopedId": "17841477685637543"
+      },
+      "platformStatus": "active",
+      "platformStatusReason": null,
+      "platformStatusAt": null,
+      "oauthAppId": null,
+      "scopeAreas": null,
+      "followersCount": 7,
+      "followersLastUpdated": "2026-11-23T11:59:37.105Z",
+      "rateLimitedUntil": "2026-11-21T08:32:35.685Z",
+      "lastRateLimitAt": "2026-11-20T19:56:48.758Z",
+      "lastRateLimitError": "Instagram's publishing limit for this account was reached (Instagram caps posts published through its API in a rolling 24 hours). Check the remaining quota with GET /v1/accounts/{accountId}/instagram/publishing-limit and post again once it frees up. It used 51 of the 50 posts Instagram allows per 24 hours.",
+      "rateLimitCount": 1,
+      "rateLimitCountResetAt": "2026-11-20T19:56:48.758Z",
+      "lastSuccessfulPublishAt": null,
+      "intentionalDisconnectAt": null,
+      "needsReconnection": false,
+      "enabled": true,
+      "notificationOnly": false,
+      "workspaceId": "6b005198db5770c0e8045df2",
+      "createdAt": "2026-11-20T06:59:53.608Z",
+      "updatedAt": "2026-11-23T11:59:37.105Z",
+      "tokenExpiresAt": "2027-01-19T06:59:53.580Z",
+      "byokCredentials": null,
+      "messagingRestriction": null,
+      "adsStatus": "connected",
+      "inboundActivity": {
+        "firstMessageAt": null,
+        "lastMessageAt": null,
+        "firstCommentAt": null,
+        "lastCommentAt": null
+      }
+    },
+    {
+      "_id": "6afff00f70cbda1a74460cc8",
+      "userId": "6affefcf46f3e3c51070ff8d",
+      "profileId": {
+        "_id": "6affefcf46f3e3c51070ff8f",
+        "name": "Default",
+        "externalId": null
+      },
+      "connectedBy": "6affefcf46f3e3c51070ff8d",
+      "platform": "youtube",
+      "platformUserId": "UCvc6lCGmUKBObvIpyh-qgcA",
+      "username": "smartyyy_live",
+      "displayName": "SMARTX LIVE ",
+      "profilePicture": "https://yt3.ggpht.com/TULCQgb3Q7cIEEyDlhBM1NkX1cbpe8B8O0wpAhXxdmCYPR-5UyBNN6s1teXDsXt8dBuWbhah=s88-c-k-c0x00ffffff-no-rj",
+      "profileUrl": "https://youtube.com/@smartyyy_live",
+      "isActive": true,
+      "permissions": [
+        "https://www.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/yt-analytics.readonly"
+      ],
+      "metadata": {
+        "scope": "https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/yt-analytics.readonly",
+        "expires_in": 3599,
+        "connectedAt": "2026-11-20T19:14:10.437Z",
+        "profileData": {
+          "id": "UCvc6lCGmUKBObvIpyh-qgcA",
+          "bio": "",
+          "username": "smartyyy_live",
+          "extraData": {
+            "totalViews": 3293,
+            "videoCount": 139
+          },
+          "followersCount": 3110,
+          "displayName": "SMARTX LIVE ",
+          "profilePicture": "https://yt3.ggpht.com/TULCQgb3Q7cIEEyDlhBM1NkX1cbpe8B8O0wpAhXxdmCYPR-5UyBNN6s1teXDsXt8dBuWbhah=s88-c-k-c0x00ffffff-no-rj",
+          "profileUrl": "https://youtube.com/@smartyyy_live"
+        },
+        "lastTokenRefreshAt": "2026-11-23T00:17:22.333Z",
+        "refreshEnqueuedAt": "2026-11-23T00:16:48.737Z"
+      },
+      "platformStatus": "active",
+      "platformStatusReason": null,
+      "platformStatusAt": null,
+      "oauthAppId": null,
+      "scopeAreas": null,
+      "followersCount": 3110,
+      "followersLastUpdated": "2026-11-23T11:59:39.451Z",
+      "rateLimitedUntil": "2026-11-24T00:12:55.472Z",
+      "lastRateLimitAt": "2026-11-23T11:15:39.843Z",
+      "lastRateLimitError": "YouTube upload failed: YouTube daily upload limit reached for this channel. Please try again tomorrow.",
+      "rateLimitCount": 1,
+      "rateLimitCountResetAt": "2026-11-23T11:15:39.843Z",
+      "lastSuccessfulPublishAt": "2026-11-23T00:12:55.472Z",
+      "intentionalDisconnectAt": null,
+      "needsReconnection": false,
+      "enabled": true,
+      "notificationOnly": false,
+      "workspaceId": "6b005198db5770c0e8045df2",
+      "createdAt": "2026-11-20T07:00:31.255Z",
+      "updatedAt": "2026-11-23T16:47:13.390Z",
+      "tokenExpiresAt": "2026-11-23T17:47:12.367Z",
+      "byokCredentials": null,
+      "gcpProjectId": "default",
+      "youtubeCanUploadThumbnails": null,
+      "adsStatus": "not_available"
+    }
+  ],
+  "hasAnalyticsAccess": true,
+  "key_hash": "e9c2d14d440e",
+  "_at": 1795457936.3911314
+}

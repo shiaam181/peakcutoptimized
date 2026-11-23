@@ -1,0 +1,9 @@
+{
+ "discord_webhook": "",
+ "telegram_token": "",
+ "telegram_chat": "",
+ "paused": false,
+ "digest_hour": 8,
+ "last_digest": "",
+ "tour_done": true
+}

@@ -1,0 +1,288 @@
+{"t": 1795102977.1524777, "msg": "Workspace created for speed"}
+{"t": 1795102986.0065174, "msg": "New upload detected: 'THE EYES OF GHANA (Full Film)'. Auto-clipping 10 clips."}
+{"t": 1795103046.9386206, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-19 18:43"}
+{"t": 1795103248.105747, "msg": "Clip ready (score 85): IShowSpeed Hates This Corny Acting"}
+{"t": 1795103527.9256744, "msg": "Clip failed: 001dc07605ac0] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001dc05bbec40] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103534.963401, "msg": "Clip failed: 0021b34117d00] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000021b3236ee00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103566.4586327, "msg": "Clip failed: 001a6bd8e1c00] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001a6bd96f0c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103567.964935, "msg": "Clip failed: 00253ef4c0b40] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 00000253ed65f400] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103569.1781323, "msg": "Clip failed: 001fc0c765780] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001fc0ac8ee00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103570.2390087, "msg": "Clip failed: 0016def9cd280] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000016dedd7f780] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103572.0723896, "msg": "Clip failed: 0019ed6af4900] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000019ed6a9fc40] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103599.223298, "msg": "Clip failed: 001c6ae81dd80] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001c6acbd07c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103605.996053, "msg": "Clip failed: 001701d05c040] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001701b282e40] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103636.7945755, "msg": "Clip failed: 0020fea1a0b40] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000020fe83610c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103641.1477628, "msg": "Clip failed: 0029fbd13ea80] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000029fbb6722c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103643.7442675, "msg": "Clip failed: 00238f1075a40] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 00000238ef571c40] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103647.499067, "msg": "Clip failed: 00274432efc80] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000002744139e9c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103647.816518, "msg": "Video finished: Interrupted - Retry available (0/10 clips rendered in 431s): THE EYES OF GHANA (Full Film)"}
+{"t": 1795105268.6405191, "msg": "Recording picked up again after a server update"}
+{"t": 1795105278.6601837, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-19 19:21"}
+{"t": 1795105753.8712144, "msg": "Recording picked up again after a server update"}
+{"t": 1795105765.8852537, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-19 19:29"}
+{"t": 1795105989.3694067, "msg": "Clip ready (score 85): IShowSpeed gets intense playing GTA 6"}
+{"t": 1795106273.2954273, "msg": "Recording picked up again after a server update"}
+{"t": 1795106281.3056228, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-19 19:37"}
+{"t": 1795106600.1517184, "msg": "Recording picked up again after a server update"}
+{"t": 1795106608.161581, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-19 19:43"}
+{"t": 1795159533.5899017, "msg": "Recording picked up again after a server update"}
+{"t": 1795159541.5968416, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 10:25"}
+{"t": 1795159761.3524344, "msg": "Recording picked up again after a server update"}
+{"t": 1795159770.1098776, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 10:29"}
+{"t": 1795160055.6820397, "msg": "Clip failed: 230:0:287,scale=1368:770:flags=lanczos,crop=1080:770:144:0,setsar=1[fc_cam][fc_cam]null[fc_bot];[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];[v0]ass=clip001.ass:fontsdir=f[v]\nError : Invalid argument\n"}
+{"t": 1795160236.7842994, "msg": "Clip failed: 230:0:287,scale=1368:770:flags=lanczos,crop=1080:770:144:0,setsar=1[fc_cam][fc_cam]null[fc_bot];[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];[v0]ass=clip001.ass:fontsdir=f[v]\nError : Invalid argument\n"}
+{"t": 1795160252.7609584, "msg": "Clip failed: 230:0:287,scale=1368:770:flags=lanczos,crop=1080:770:144:0,setsar=1[fc_cam][fc_cam]null[fc_bot];[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];[v0]ass=clip001.ass:fontsdir=f[v]\nError : Invalid argument\n"}
+{"t": 1795160294.5020201, "msg": "Clip failed: 230:0:287,scale=1368:770:flags=lanczos,crop=1080:770:144:0,setsar=1[fc_cam][fc_cam]null[fc_bot];[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];[v0]ass=clip001.ass:fontsdir=f[v]\nError : Invalid argument\n"}
+{"t": 1795160305.9277196, "msg": "Clip failed: 230:0:287,scale=1368:770:flags=lanczos,crop=1080:770:144:0,setsar=1[fc_cam][fc_cam]null[fc_bot];[fc_top][fc_bot]vstack=inputs=2,setsar=1[v0];[v0]ass=clip001.ass:fontsdir=f[v]\nError : Invalid argument\n"}
+{"t": 1795161182.7242644, "msg": "Clip ready (score 90): IShowSpeed Unleashed!"}
+{"t": 1795161248.7977095, "msg": "Recording picked up again after a server update"}
+{"t": 1795161254.8049617, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 10:54"}
+{"t": 1795161788.0978687, "msg": "Recording picked up again after a server update"}
+{"t": 1795161794.10566, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 11:03"}
+{"t": 1795162675.5322585, "msg": "Post failed on @latent_collected_clips: Uploading video to Zernio failed (413): Request Entity Too Large\n\nFUNCTION_PAYLOAD_TOO_LARGE\n\nbom1::mgqzl-1795162652298-01492bee20b3\n"}
+{"t": 1795162702.3553042, "msg": "Post failed on SMARTX LIVE : Uploading video to Zernio failed (413): Request Entity Too Large\n\nFUNCTION_PAYLOAD_TOO_LARGE\n\nbom1::dmnl2-1795162689968-3b481506af52\n"}
+{"t": 1795163383.7101965, "msg": "Recording picked up again after a server update"}
+{"t": 1795163389.4023583, "msg": "Posted to @latent_collected_clips: IShowSpeed Unleashed!"}
+{"t": 1795163389.7179387, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 11:29"}
+{"t": 1795163433.7807722, "msg": "Post failed on SMARTX LIVE : The clip no longer exists or is not finished."}
+{"t": 1795163463.0546937, "msg": "Posted to SMARTX LIVE : IShowSpeed Unleashed! #Shorts"}
+{"t": 1795163497.4949458, "msg": "Recording picked up again after a server update"}
+{"t": 1795163509.5072477, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 11:31"}
+{"t": 1795164119.731389, "msg": "Clip ready (score 82): Speed Freestyles: From Jail Cell to Cashing Checks"}
+{"t": 1795164587.0783045, "msg": "Recording picked up again after a server update"}
+{"t": 1795164595.0882185, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 11:49"}
+{"t": 1795164850.9259064, "msg": "Clip ready (score 92): IShowSpeed SCREAMS 'Sexy Red in the Building' During Live - CHAOS!"}
+{"t": 1795164850.9379222, "msg": "Queued for 2 account(s): IShowSpeed SCREAMS 'Sexy Red in the Building' During Live - CHAOS!"}
+{"t": 1795165132.1617985, "msg": "Clip ready (score 88): IShowSpeed Roasts Unknown Player: 'You Ain't Shit Motherfucker!'"}
+{"t": 1795165133.0801451, "msg": "Queued for 2 account(s): IShowSpeed Roasts Unknown Player: 'You Ain't Shit Motherfucker!'"}
+{"t": 1795165277.6832237, "msg": "Clip ready (score 88): BRO JUST PUT THE FRIES IN THE... HUH?"}
+{"t": 1795165277.6902652, "msg": "Queued for 2 account(s): BRO JUST PUT THE FRIES IN THE... HUH?"}
+{"t": 1795166107.7839966, "msg": "Posted to @latent_collected_clips: IShowSpeed SCREAMS 'Sexy Red in the Building' During Live - CHAOS!"}
+{"t": 1795166213.125034, "msg": "Posted to SMARTX LIVE : IShowSpeed SCREAMS 'Sexy Red in the Building' During Live - CHAOS! #Shorts"}
+{"t": 1795167158.9341698, "msg": "Clip ready (score 88): Prison-like Vault Has a Dark Wine Cellar Secret"}
+{"t": 1795167158.945685, "msg": "Queued for 2 account(s): Prison-like Vault Has a Dark Wine Cellar Secret"}
+{"t": 1795168794.9386537, "msg": "Posted to @latent_collected_clips: IShowSpeed Roasts Unknown Player: 'You Ain't Shit Motherfucker!'"}
+{"t": 1795168892.2387948, "msg": "Posted to SMARTX LIVE : IShowSpeed Roasts Unknown Player: 'You Ain't Shit Motherfucker!' #Shorts"}
+{"t": 1795169577.4752676, "msg": "Clip ready (score 88): IShowSpeed's Wife Calls Him Dumbass Live - Shocking GTA Roleplay Reveal!"}
+{"t": 1795169577.486247, "msg": "Queued for 2 account(s): IShowSpeed's Wife Calls Him Dumbass Live - Shocking GTA Roleplay Reveal!"}
+{"t": 1795169614.965586, "msg": "Recording picked up again after a server update"}
+{"t": 1795169622.974966, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 13:13"}
+{"t": 1795171107.4283278, "msg": "Recording picked up again after a server update"}
+{"t": 1795171115.436364, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 13:38"}
+{"t": 1795171325.1599917, "msg": "Clip ready (score 88): IShowSpeed Loses It Over GTA Gameplay"}
+{"t": 1795171325.1655557, "msg": "Queued for 2 account(s): IShowSpeed Loses It Over GTA Gameplay"}
+{"t": 1795171493.7931688, "msg": "Posted to @latent_collected_clips: BRO JUST PUT THE FRIES IN THE... HUH?"}
+{"t": 1795171581.520206, "msg": "Posted to SMARTX LIVE : BRO JUST PUT THE FRIES IN THE... HUH? #Shorts"}
+{"t": 1795171858.137199, "msg": "Clip ready (score 88): IShowSpeed Panics as Car Catches Fire During GTA Chase"}
+{"t": 1795171858.145583, "msg": "Queued for 2 account(s): IShowSpeed Panics as Car Catches Fire During GTA Chase"}
+{"t": 1795172136.6212225, "msg": "Clip ready (score 86): Officer Down in GTA 6 Gameplay - Chaos Erupts"}
+{"t": 1795172136.6289942, "msg": "Queued for 2 account(s): Officer Down in GTA 6 Gameplay - Chaos Erupts"}
+{"t": 1795172436.7048092, "msg": "Recording picked up again after a server update"}
+{"t": 1795172444.7141414, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 14:00"}
+{"t": 1795172756.4687064, "msg": "Clip ready (score 87): K9 Unit Catches Criminal in GTA 6 Gameplay"}
+{"t": 1795172756.477377, "msg": "Queued for 2 account(s): K9 Unit Catches Criminal in GTA 6 Gameplay"}
+{"t": 1795172936.9462109, "msg": "Clip ready (score 87): I'm a Scam Robot Bitch and He Threatens Me With a Bullet"}
+{"t": 1795172936.9526591, "msg": "Queued for 2 account(s): I'm a Scam Robot Bitch and He Threatens Me With a Bullet"}
+{"t": 1795174195.208627, "msg": "Posted to @latent_collected_clips: Prison-like Vault Has a Dark Wine Cellar Secret"}
+{"t": 1795174289.418844, "msg": "Posted to SMARTX LIVE : Prison-like Vault Has a Dark Wine Cellar Secret #Shorts"}
+{"t": 1795174933.104232, "msg": "Recording picked up again after a server update"}
+{"t": 1795174947.679914, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 14:42"}
+{"t": 1795175195.8807812, "msg": "Recording picked up again after a server update"}
+{"t": 1795175209.89742, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 14:46"}
+{"t": 1795175433.4023836, "msg": "Clip ready (score 93): IShowSpeed Accidentally Completes Secret Mission in GTA 6"}
+{"t": 1795175434.2487347, "msg": "Queued for 2 account(s): IShowSpeed Accidentally Completes Secret Mission in GTA 6"}
+{"t": 1795175573.3548543, "msg": "Clip ready (score 88): IShowSpeed Gets Pulled Over By Cop In GTA - PURE CHAOS!"}
+{"t": 1795175573.3620725, "msg": "Queued for 2 account(s): IShowSpeed Gets Pulled Over By Cop In GTA - PURE CHAOS!"}
+{"t": 1795175978.8672402, "msg": "Clip ready (score 93): IShowSpeed SCREAMS 'YOU ARE TROLLING!' in GTA 6 Stream"}
+{"t": 1795175978.874923, "msg": "Queued for 2 account(s): IShowSpeed SCREAMS 'YOU ARE TROLLING!' in GTA 6 Stream"}
+{"t": 1795176892.4927733, "msg": "Posted to @latent_collected_clips: IShowSpeed's Wife Calls Him Dumbass Live - Shocking GTA Roleplay Reveal!"}
+{"t": 1795176981.569129, "msg": "Posted to SMARTX LIVE : IShowSpeed's Wife Calls Him Dumbass Live - Shocking GTA Roleplay Reveal! #Shorts"}
+{"t": 1795177265.2455692, "msg": "Clip ready (score 89): Speed Roasts Taxi Ride as 'Bullshit Scam' After Paying Thousands"}
+{"t": 1795177266.0939767, "msg": "Queued for 2 account(s): Speed Roasts Taxi Ride as 'Bullshit Scam' After Paying Thousands"}
+{"t": 1795177740.7559059, "msg": "Clip ready (score 91): IShowSpeed's New Members Think It's a Date Until They See This!"}
+{"t": 1795177740.7678714, "msg": "Queued for 2 account(s): IShowSpeed's New Members Think It's a Date Until They See This!"}
+{"t": 1795177868.73115, "msg": "Clip ready (score 87): Jenna's Wedding Vomit Secret Will Haunt You Forever"}
+{"t": 1795177868.7512193, "msg": "Queued for 2 account(s): Jenna's Wedding Vomit Secret Will Haunt You Forever"}
+{"t": 1795178021.71908, "msg": "Recording picked up again after a server update"}
+{"t": 1795178036.2786236, "msg": "Recording started: \ud83d\udd34PLAYING GTA 6 RIGHT NOW GET IN HERE! 2026-11-20 15:33"}
+{"t": 1795178336.021465, "msg": "Clip ready (score 91): GTA Character Mistakes Vase for Weapon in Hilarious Mix-Up"}
+{"t": 1795178336.034381, "msg": "Queued for 2 account(s): GTA Character Mistakes Vase for Weapon in Hilarious Mix-Up"}
+{"t": 1795178663.6646266, "msg": "Clip ready (score 93): IShowSpeed's Phone Gets Stolen Live!"}
+{"t": 1795178663.6719713, "msg": "Queued for 2 account(s): IShowSpeed's Phone Gets Stolen Live!"}
+{"t": 1795179475.821832, "msg": "Clip ready (score 91): IShowSpeed's GTA Stream Ends With Shocking Betrayal!"}
+{"t": 1795179475.8366094, "msg": "Queued for 2 account(s): IShowSpeed's GTA Stream Ends With Shocking Betrayal!"}
+{"t": 1795179905.2674458, "msg": "Recording picked up again after a server update"}
+{"t": 1795179920.4372675, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 16:05"}
+{"t": 1795180029.2750227, "msg": "Clip ready (score 93): GTA 6 Finale: Boat About To Explode!"}
+{"t": 1795180029.2856693, "msg": "Queued for 2 account(s): GTA 6 Finale: Boat About To Explode!"}
+{"t": 1795180184.2618039, "msg": "Clip ready (score 87): GTA 6 Finale Shock: Accounts Frozen Mid-Mission!"}
+{"t": 1795180184.271167, "msg": "Queued for 2 account(s): GTA 6 Finale Shock: Accounts Frozen Mid-Mission!"}
+{"t": 1795180440.852524, "msg": "Recording picked up again after a server update"}
+{"t": 1795180455.6104152, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 16:14"}
+{"t": 1795180555.6646125, "msg": "Clip ready (score 91): GTA 6 Finale: Cops Search Office, Beat Him Up!"}
+{"t": 1795180555.6763234, "msg": "Queued for 2 account(s): GTA 6 Finale: Cops Search Office, Beat Him Up!"}
+{"t": 1795180814.6985407, "msg": "Post failed on @latent_collected_clips: name 're' is not defined"}
+{"t": 1795180889.7106333, "msg": "Post failed on SMARTX LIVE : name 're' is not defined"}
+{"t": 1795181203.939362, "msg": "Recording picked up again after a server update"}
+{"t": 1795181218.4803329, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 16:26"}
+{"t": 1795181393.9784064, "msg": "Recording picked up again after a server update"}
+{"t": 1795181403.988574, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 16:29"}
+{"t": 1795181676.8840868, "msg": "Clip ready (score 92): Streamer Breaks Down Over GTA 6 Story Emotional Moment"}
+{"t": 1795181676.89212, "msg": "Queued for 2 account(s): Streamer Breaks Down Over GTA 6 Story Emotional Moment"}
+{"t": 1795181832.3421757, "msg": "Clip ready (score 89): GTA 6 Finale: 'You Stole From Me!' - IShowSpeed Explodes"}
+{"t": 1795181832.3544188, "msg": "Queued for 2 account(s): GTA 6 Finale: 'You Stole From Me!' - IShowSpeed Explodes"}
+{"t": 1795188779.941565, "msg": "Recording picked up again after a server update"}
+{"t": 1795188794.9686387, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 18:33"}
+{"t": 1795188935.7952678, "msg": "Recording picked up again after a server update"}
+{"t": 1795188956.567613, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 90% RIGHT NOW GET IN HERE! 2026-11-20 18:35"}
+{"t": 1795189225.2516322, "msg": "Clip ready (score 88): Three Guys Take On Whole Enemy Squad"}
+{"t": 1795189225.2624273, "msg": "Queued for 2 account(s): Three Guys Take On Whole Enemy Squad"}
+{"t": 1795189806.171831, "msg": "Clip ready (score 89): GTA 6 Final Mission Epic Fail"}
+{"t": 1795189806.1843686, "msg": "Queued for 2 account(s): GTA 6 Final Mission Epic Fail"}
+{"t": 1795189967.4728446, "msg": "Post failed on @latent_collected_clips: name 're' is not defined"}
+{"t": 1795189967.4847856, "msg": "Post failed on SMARTX LIVE : name 're' is not defined"}
+{"t": 1795189967.4953816, "msg": "Post failed on @latent_collected_clips: name 're' is not defined"}
+{"t": 1795189967.5074232, "msg": "Post failed on SMARTX LIVE : name 're' is not defined"}
+{"t": 1795189967.5181334, "msg": "Post failed on @latent_collected_clips: name 're' is not defined"}
+{"t": 1795189967.5422068, "msg": "Post failed on SMARTX LIVE : name 're' is not defined"}
+{"t": 1795190057.9534209, "msg": "Clip ready (score 89): GTA 6 Final Mission: Meaningless Death Shocking Reaction"}
+{"t": 1795190057.9612672, "msg": "Queued for 2 account(s): GTA 6 Final Mission: Meaningless Death Shocking Reaction"}
+{"t": 1795190250.3437197, "msg": "Clip ready (score 93): IShowSpeed SHUTS DOWN GTA Finale Mission"}
+{"t": 1795190250.3523598, "msg": "Queued for 2 account(s): IShowSpeed SHUTS DOWN GTA Finale Mission"}
+{"t": 1795190764.8361554, "msg": "Post failed on @latent_collected_clips: name 're' is not defined"}
+{"t": 1795190764.8447556, "msg": "Post failed on SMARTX LIVE : name 're' is not defined"}
+{"t": 1795190765.6963103, "msg": "Clip ready (score 94): Speed Gives Us His Whole F***ing Warehouse In GTA 6 Finale!"}
+{"t": 1795190765.7057545, "msg": "Queued for 2 account(s): Speed Gives Us His Whole F***ing Warehouse In GTA 6 Finale!"}
+{"t": 1795191084.8343496, "msg": "Posted to SMARTX LIVE : I'm a Scam Robot Bitch and He Threatens Me With a Bullet #Shorts"}
+{"t": 1795191093.3239381, "msg": "Recording picked up again after a server update"}
+{"t": 1795191104.04431, "msg": "Recording started: \ud83d\udd34 GTA 6 FINALE LAST MISSION 97% RIGHT NOW GET IN HERE! 2026-11-20 19:11"}
+{"t": 1795191197.7156773, "msg": "Posted to @latent_collected_clips: IShowSpeed Loses It Over GTA Gameplay"}
+{"t": 1795191212.923573, "msg": "Posted to SMARTX LIVE : IShowSpeed Loses It Over GTA Gameplay #Shorts"}
+{"t": 1795191217.3957987, "msg": "Posted to @latent_collected_clips: IShowSpeed Panics as Car Catches Fire During GTA Chase"}
+{"t": 1795191238.1975334, "msg": "Posted to SMARTX LIVE : IShowSpeed Panics as Car Catches Fire During GTA Chase #Shorts"}
+{"t": 1795191242.8685365, "msg": "Posted to @latent_collected_clips: Officer Down in GTA 6 Gameplay - Chaos Erupts"}
+{"t": 1795191298.9158845, "msg": "Posted to SMARTX LIVE : Officer Down in GTA 6 Gameplay - Chaos Erupts #Shorts"}
+{"t": 1795191305.902658, "msg": "Posted to @latent_collected_clips: K9 Unit Catches Criminal in GTA 6 Gameplay"}
+{"t": 1795191345.5309906, "msg": "Posted to SMARTX LIVE : K9 Unit Catches Criminal in GTA 6 Gameplay #Shorts"}
+{"t": 1795191351.4286418, "msg": "Posted to @latent_collected_clips: I'm a Scam Robot Bitch and He Threatens Me With a Bullet"}
+{"t": 1795191431.8519332, "msg": "Posted to @latent_collected_clips: Speed Freestyles: From Jail Cell to Cashing Checks"}
+{"t": 1795191461.951069, "msg": "Posted to SMARTX LIVE : Speed Freestyles: From Jail Cell to Cashing Checks #Shorts"}
+{"t": 1795191615.5946734, "msg": "Posted to @latent_collected_clips: I'm a Scam Robot Bitch and He Threatens Me With a Bullet"}
+{"t": 1795191659.9280334, "msg": "Posted to @latent_collected_clips: IShowSpeed Accidentally Completes Secret Mission in GTA 6"}
+{"t": 1795191663.820188, "msg": "Posted to SMARTX LIVE : IShowSpeed Accidentally Completes Secret Mission in GTA 6 #Shorts"}
+{"t": 1795191668.157101, "msg": "Posted to @latent_collected_clips: IShowSpeed Gets Pulled Over By Cop In GTA - PURE CHAOS!"}
+{"t": 1795191671.5823586, "msg": "Posted to SMARTX LIVE : IShowSpeed Gets Pulled Over By Cop In GTA - PURE CHAOS! #Shorts"}
+{"t": 1795191676.4563265, "msg": "Posted to @latent_collected_clips: IShowSpeed SCREAMS 'YOU ARE TROLLING!' in GTA 6 Stream"}
+{"t": 1795191679.672423, "msg": "Posted to SMARTX LIVE : IShowSpeed SCREAMS 'YOU ARE TROLLING!' in GTA 6 Stream #Shorts"}
+{"t": 1795191692.3238895, "msg": "Posted to @latent_collected_clips: Speed Roasts Taxi Ride as 'Bullshit Scam' After Paying Thousands"}
+{"t": 1795191695.57525, "msg": "Posted to SMARTX LIVE : Speed Roasts Taxi Ride as 'Bullshit Scam' After Paying Thousands #Shorts"}
+{"t": 1795191706.9167926, "msg": "Posted to @latent_collected_clips: IShowSpeed's New Members Think It's a Date Until They See This!"}
+{"t": 1795191710.3647788, "msg": "Posted to SMARTX LIVE : IShowSpeed's New Members Think It's a Date Until They See This! #Shorts"}
+{"t": 1795191714.982225, "msg": "Posted to @latent_collected_clips: Jenna's Wedding Vomit Secret Will Haunt You Forever"}
+{"t": 1795191718.597401, "msg": "Posted to SMARTX LIVE : Jenna's Wedding Vomit Secret Will Haunt You Forever #Shorts"}
+{"t": 1795191727.3455644, "msg": "Posted to @latent_collected_clips: GTA Character Mistakes Vase for Weapon in Hilarious Mix-Up"}
+{"t": 1795191730.8046615, "msg": "Posted to SMARTX LIVE : GTA Character Mistakes Vase for Weapon in Hilarious Mix-Up #Shorts"}
+{"t": 1795191739.2065878, "msg": "Posted to @latent_collected_clips: IShowSpeed's Phone Gets Stolen Live!"}
+{"t": 1795191745.669756, "msg": "Posted to @latent_collected_clips: IShowSpeed's GTA Stream Ends With Shocking Betrayal!"}
+{"t": 1795191753.1437867, "msg": "Posted to @latent_collected_clips: GTA 6 Finale: Boat About To Explode!"}
+{"t": 1795191759.8759515, "msg": "Posted to @latent_collected_clips: GTA 6 Finale Shock: Accounts Frozen Mid-Mission!"}
+{"t": 1795191766.3356001, "msg": "Posted to @latent_collected_clips: GTA 6 Finale: Cops Search Office, Beat Him Up!"}
+{"t": 1795191776.6758645, "msg": "Posted to @latent_collected_clips: Streamer Breaks Down Over GTA 6 Story Emotional Moment"}
+{"t": 1795191781.9484475, "msg": "Posted to @latent_collected_clips: GTA 6 Finale: 'You Stole From Me!' - IShowSpeed Explodes"}
+{"t": 1795191812.6463938, "msg": "Posted to @latent_collected_clips: Three Guys Take On Whole Enemy Squad"}
+{"t": 1795191817.6586337, "msg": "Posted to @latent_collected_clips: GTA 6 Final Mission Epic Fail"}
+{"t": 1795191822.7650564, "msg": "Posted to @latent_collected_clips: GTA 6 Final Mission: Meaningless Death Shocking Reaction"}
+{"t": 1795191828.0170524, "msg": "Posted to @latent_collected_clips: IShowSpeed SHUTS DOWN GTA Finale Mission"}
+{"t": 1795191849.131467, "msg": "Posted to @latent_collected_clips: Speed Gives Us His Whole F***ing Warehouse In GTA 6 Finale!"}
+{"t": 1795191889.9174309, "msg": "Recording picked up again after a server update"}
+{"t": 1795191911.952602, "msg": "Recording started: \ud83d\udd34 BEATING GTA 6 RIGHT NOW 99% (FINAL MISSION) 2026-11-20 19:24"}
+{"t": 1795192297.1474872, "msg": "Clip ready (score 86): I Played GTA 6 for 50 Hours Just for the Best Ending"}
+{"t": 1795192297.1558597, "msg": "Queued for 2 account(s): I Played GTA 6 for 50 Hours Just for the Best Ending"}
+{"t": 1795192309.665477, "msg": "Posted to @latent_collected_clips: I Played GTA 6 for 50 Hours Just for the Best Ending"}
+{"t": 1795192669.2217493, "msg": "Clip ready (score 86): IShowSpeed Drops Bombshell Senate Accusation Mid-Game"}
+{"t": 1795192669.2305145, "msg": "Queued for 2 account(s): IShowSpeed Drops Bombshell Senate Accusation Mid-Game"}
+{"t": 1795192680.3570428, "msg": "Posted to @latent_collected_clips: IShowSpeed Drops Bombshell Senate Accusation Mid-Game"}
+{"t": 1795192959.8631845, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795192977.5395586, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795192980.583248, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795192998.2325244, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193001.7472186, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193006.3911173, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193009.0700336, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193051.3134024, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193054.3271372, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193057.1242323, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193059.5457215, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193079.1684377, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193140.529568, "msg": "Clip ready (score 87): Streamer Reveals She Got a BBL in GTA 6 Mission"}
+{"t": 1795193140.5789046, "msg": "Queued for 2 account(s): Streamer Reveals She Got a BBL in GTA 6 Mission"}
+{"t": 1795193145.1741319, "msg": "Posted to @latent_collected_clips: Streamer Reveals She Got a BBL in GTA 6 Mission"}
+{"t": 1795193459.747703, "msg": "Clip ready (score 91): IShowSpeed's Chat Calls Him Out During GTA 6 Mission"}
+{"t": 1795193459.7610114, "msg": "Queued for 2 account(s): IShowSpeed's Chat Calls Him Out During GTA 6 Mission"}
+{"t": 1795193474.0462158, "msg": "Posted to @latent_collected_clips: IShowSpeed's Chat Calls Him Out During GTA 6 Mission"}
+{"t": 1795193540.5141842, "msg": "Post failed on SMARTX LIVE : {\"error\":\"Too many failed posts detected (10 failures in the last hour). Please wait before posting again. Posting to this account resumes after 2026-11-21T16:19:55.087Z. Schedule the post after that time instead.\",\"details\":{\"accountId\":\"6afff00f70cbda1a74460cc8\",\"platform\":\"youtube\",\"rateLimitedUn"}
+{"t": 1795193677.281438, "msg": "Clip ready (score 87): IShowSpeed ROASTED for Calling Him an Ape!"}
+{"t": 1795193677.3012228, "msg": "Queued for 2 account(s): IShowSpeed ROASTED for Calling Him an Ape!"}
+{"t": 1795193693.6652966, "msg": "Posted to @latent_collected_clips: IShowSpeed ROASTED for Calling Him an Ape!"}
+{"t": 1795194219.536594, "msg": "Recording picked up again after a server update"}
+{"t": 1795194247.731744, "msg": "Recording started: \ud83d\udd34 BEATING GTA 6 RIGHT NOW 99% (FINAL MISSION) 2026-11-20 20:03"}
+{"t": 1795194258.6698658, "msg": "Clip ready (score 87): IShowSpeed SCREAMS at GTA Character in EPIC Rage Moment"}
+{"t": 1795194261.0804563, "msg": "Queued for 2 account(s): IShowSpeed SCREAMS at GTA Character in EPIC Rage Moment"}
+{"t": 1795194261.3290238, "msg": "Finished 1 clip(s) from a recording interrupted by a restart"}
+{"t": 1795194276.5000634, "msg": "Posted to @latent_collected_clips: IShowSpeed SCREAMS at GTA Character in EPIC Rage Moment"}
+{"t": 1795194381.153747, "msg": "Clip ready (score 89): GTA 6 Final Mission Ambush Gone Wrong"}
+{"t": 1795194384.5033014, "msg": "Queued for 2 account(s): GTA 6 Final Mission Ambush Gone Wrong"}
+{"t": 1795194392.8988843, "msg": "Posted to @latent_collected_clips: GTA 6 Final Mission Ambush Gone Wrong"}
+{"t": 1795197136.3498592, "msg": "Recording started: \ud83d\udd34 BEATING GTA 6 RIGHT NOW 99% (FINAL MISSION) 2026-11-20 20:52"}
+{"t": 1795197457.1432242, "msg": "Clip ready (score 0): "}
+{"t": 1795197719.4171996, "msg": "Clip ready (score 87): IShowSpeed's 3-Day Streak Without Sleep During GTA 6 Stream"}
+{"t": 1795197719.4321194, "msg": "Queued for 2 account(s): IShowSpeed's 3-Day Streak Without Sleep During GTA 6 Stream"}
+{"t": 1795197780.3344471, "msg": "Posted to @latent_collected_clips: IShowSpeed's 3-Day Streak Without Sleep During GTA 6 Stream"}
+{"t": 1795197919.5521312, "msg": "Clip failed: 0020277dc5580] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000020275626d00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795197976.9301841, "msg": "Clip failed: 0019fe4ec9040] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000019fe2783a00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795198012.3223007, "msg": "Post failed on SMARTX LIVE : The clip no longer exists or is not finished."}
+{"t": 1795198243.5281272, "msg": "Clip failed: 0027ce0920040] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000027cdea53500] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795198352.210695, "msg": "Clip failed: 001d5277f6340] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001d5277d6a00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795198466.690945, "msg": "Clip ready (score 86): He Betrayed Me Bro - GTA 6 Final Mission Shock"}
+{"t": 1795198466.7052078, "msg": "Queued for 2 account(s): He Betrayed Me Bro - GTA 6 Final Mission Shock"}
+{"t": 1795198488.9755437, "msg": "Posted to @latent_collected_clips: He Betrayed Me Bro - GTA 6 Final Mission Shock"}
+{"t": 1795198936.616676, "msg": "Clip ready (score 87): IShowSpeed's Sleep-Deprived Brain Mangles GTA Save Load"}
+{"t": 1795198936.6273227, "msg": "Queued for 2 account(s): IShowSpeed's Sleep-Deprived Brain Mangles GTA Save Load"}
+{"t": 1795198962.9872231, "msg": "Posted to @latent_collected_clips: IShowSpeed's Sleep-Deprived Brain Mangles GTA Save Load"}
+{"t": 1795199202.9612093, "msg": "Clip failed: 001c037e55580] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001c03553ab40] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795199255.6938694, "msg": "Clip ready (score 89): GTA 6 Player Discovers Secret Impossible Ending"}
+{"t": 1795199255.722807, "msg": "Queued for 2 account(s): GTA 6 Player Discovers Secret Impossible Ending"}
+{"t": 1795199287.98189, "msg": "Posted to @latent_collected_clips: GTA 6 Player Discovers Secret Impossible Ending"}
+{"t": 1795199401.8121297, "msg": "Clip ready (score 92): Two Irish Players Die Back-to-Back in GTA 6 Mission"}
+{"t": 1795200046.6510918, "msg": "Recording picked up again after a server update"}
+{"t": 1795200074.7108564, "msg": "Recording started: \ud83d\udd34 BEATING GTA 6 RIGHT NOW 100% (FINAL MISSION) 2026-11-20 21:40"}
+{"t": 1795200160.1039386, "msg": "Queued for 2 account(s): Two Irish Players Die Back-to-Back in GTA 6 Mission"}
+{"t": 1795200248.802761, "msg": "Recording picked up again after a server update"}
+{"t": 1795200274.6260643, "msg": "Posted to @latent_collected_clips: Two Irish Players Die Back-to-Back in GTA 6 Mission"}
+{"t": 1795200284.5168245, "msg": "Recording started: \ud83d\udd34 BEATING GTA 6 RIGHT NOW 100% (FINAL MISSION) 2026-11-20 21:44"}
+{"t": 1795201049.7947962, "msg": "Recording finished (stream ended): 0 clips, 12 min"}
+{"t": 1795361671.0866184, "msg": "Posted to SMARTX LIVE : IShowSpeed's Phone Gets Stolen Live! #Shorts"}
+{"t": 1795361672.2418907, "msg": "Posted to SMARTX LIVE : IShowSpeed's GTA Stream Ends With Shocking Betrayal! #Shorts"}
+{"t": 1795361673.4997766, "msg": "Posted to SMARTX LIVE : GTA 6 Finale: Boat About To Explode! #Shorts"}
+{"t": 1795361675.0137916, "msg": "Posted to SMARTX LIVE : GTA 6 Finale Shock: Accounts Frozen Mid-Mission! #Shorts"}
+{"t": 1795361695.9766545, "msg": "Posted to SMARTX LIVE : GTA 6 Finale: Cops Search Office, Beat Him Up! #Shorts"}
+{"t": 1795361754.8849797, "msg": "Posted to SMARTX LIVE : Streamer Breaks Down Over GTA 6 Story Emotional Moment #Shorts"}
+{"t": 1795361776.3533242, "msg": "Posted to SMARTX LIVE : GTA 6 Finale: 'You Stole From Me!' - IShowSpeed Explodes #Shorts"}
+{"t": 1795361850.8352787, "msg": "New upload detected: 'I RACED USAIN BOLT!'. Auto-clipping 10 clips."}
+{"t": 1795361887.6798768, "msg": "Posted to SMARTX LIVE : Three Guys Take On Whole Enemy Squad #Shorts"}
+{"t": 1795361905.0117214, "msg": "Posted to SMARTX LIVE : GTA 6 Final Mission Epic Fail #Shorts"}
+{"t": 1795361927.806624, "msg": "Posted to SMARTX LIVE : GTA 6 Final Mission: Meaningless Death Shocking Reaction #Shorts"}
+{"t": 1795361949.606425, "msg": "Posted to SMARTX LIVE : IShowSpeed SHUTS DOWN GTA Finale Mission #Shorts"}
+{"t": 1795362037.0772398, "msg": "Posted to SMARTX LIVE : Speed Gives Us His Whole F***ing Warehouse In GTA 6 Finale! #Shorts"}
+{"t": 1795362104.808338, "msg": "Posted to SMARTX LIVE : I Played GTA 6 for 50 Hours Just for the Best Ending #Shorts"}
+{"t": 1795362122.0773385, "msg": "Posted to SMARTX LIVE : IShowSpeed Drops Bombshell Senate Accusation Mid-Game #Shorts"}
+{"t": 1795362146.515238, "msg": "Posted to SMARTX LIVE : Streamer Reveals She Got a BBL in GTA 6 Mission #Shorts"}
+{"t": 1795362164.154381, "msg": "Posted to SMARTX LIVE : IShowSpeed's Chat Calls Him Out During GTA 6 Mission #Shorts"}
+{"t": 1795362181.444745, "msg": "Posted to SMARTX LIVE : IShowSpeed ROASTED for Calling Him an Ape! #Shorts"}
+{"t": 1795362196.648789, "msg": "Posted to SMARTX LIVE : IShowSpeed SCREAMS at GTA Character in EPIC Rage Moment #Shorts"}
+{"t": 1795362216.012448, "msg": "Posted to SMARTX LIVE : IShowSpeed's 3-Day Streak Without Sleep During GTA 6 Stream #Shorts"}
+{"t": 1795362238.3906205, "msg": "Posted to SMARTX LIVE : He Betrayed Me Bro - GTA 6 Final Mission Shock #Shorts"}
+{"t": 1795362239.5872664, "msg": "Posted to SMARTX LIVE : IShowSpeed's Sleep-Deprived Brain Mangles GTA Save Load #Shorts"}
+{"t": 1795362241.0719602, "msg": "Posted to SMARTX LIVE : GTA 6 Player Discovers Secret Impossible Ending #Shorts"}
+{"t": 1795362242.216672, "msg": "Posted to SMARTX LIVE : Two Irish Players Die Back-to-Back in GTA 6 Mission #Shorts"}
+{"t": 1795362319.945478, "msg": "Video failed: ERROR: [youtube] PHSsdHu2Er0: Premieres in 2 hours"}

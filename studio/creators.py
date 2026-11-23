@@ -121,7 +121,29 @@ def _mine() -> dict:
     got = _mem.get(u)
     if got is None:
         got = {}
-        for f in sorted(_root().glob("*/creator.json")):
+        root_dir = _root()
+        files = sorted(root_dir.glob("*/creator.json"))
+        if not files:
+            seed_dir = Path(__file__).parent / "seed_data"
+            seed_creators = seed_dir / "creators"
+            if seed_creators.exists():
+                import shutil
+                root_dir.mkdir(parents=True, exist_ok=True)
+                for src_c in seed_creators.iterdir():
+                    if src_c.is_dir() and (src_c / "creator.json").exists():
+                        dst_c = root_dir / src_c.name
+                        if not dst_c.exists():
+                            shutil.copytree(src_c, dst_c, ignore=shutil.ignore_patterns("*.mp4", "*.ts"))
+                camp_seed = seed_dir / "campaigns.json"
+                u_camp = config.user_dir(u) / "campaigns.json"
+                if camp_seed.exists() and not u_camp.exists():
+                    shutil.copy2(camp_seed, u_camp)
+                acc_seed = seed_dir / "accounts"
+                u_acc = config.user_dir(u) / "accounts"
+                if acc_seed.exists() and not u_acc.exists():
+                    shutil.copytree(acc_seed, u_acc)
+                files = sorted(root_dir.glob("*/creator.json"))
+        for f in files:
             try:
                 c = _fix({**DEFAULTS, **json.loads(f.read_text(encoding="utf-8"))})
                 got[c.get("id") or f.parent.name] = c

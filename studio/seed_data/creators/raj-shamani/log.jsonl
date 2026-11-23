@@ -1,0 +1,39 @@
+{"t": 1794930896.1670556, "msg": "Workspace created for raj shamani"}
+{"t": 1794940325.0392222, "msg": "Clip stopped after 15 minutes: Why Humans Won't Be Visiting Websites Anymore"}
+{"t": 1794940325.0551052, "msg": "Clip stopped after 15 minutes: The Secret to Selling to Small Businesses"}
+{"t": 1794940325.0578296, "msg": "Clip stopped after 15 minutes: How AI agents replaced my data team"}
+{"t": 1794940325.079359, "msg": "Clip stopped after 15 minutes: Why Your Website Bounce Rate Is High"}
+{"t": 1794940325.0946274, "msg": "Clip stopped after 15 minutes: Why Your Website Needs an AI Agent"}
+{"t": 1794940325.0989947, "msg": "Clip stopped after 15 minutes: The golden rule of using AI in business"}
+{"t": 1794940325.12174, "msg": "Video finished with 6 clips in 6632s: Why AI Will Replace These Jobs: The Skills You Need Next | Sachin Puri | FO589 Raj Shamani"}
+{"t": 1794941413.4141772, "msg": "Clip failed: 0019779780840] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000019779741dc0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1794941414.0387123, "msg": "Clip failed: 00263c9a80500] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 00000263c9a64b00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1794941414.153593, "msg": "Clip failed: 001af09d60ac0] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001af0804fe80] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1794941414.9474223, "msg": "Clip failed: Cannot allocate memory\n[fc#0 @ 000002373c6b2800] Task finished with error code: -12 (Cannot allocate memory)\n[fc#0 @ 000002373c6b2800] Terminating thread with return code -12 (Cannot allocate memory)\n"}
+{"t": 1794941434.1794302, "msg": "Clip ready (score 85): Why Humans Won't Be Visiting Websites Anymore"}
+{"t": 1794941434.4513128, "msg": "Clip ready (score 90): How AI agents replaced my data team"}
+{"t": 1794941540.7096128, "msg": "Clip failed: 0029067de0d40] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000029065ed6e80] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1794941540.7219713, "msg": "Clip failed: finished with error code: -542398533 (Generic error in an external library)\n[vost#0:0/libx264 @ 00000194dcc4a080] Terminating thread with return code -542398533 (Generic error in an external library)\n"}
+{"t": 1794941560.7307851, "msg": "Clip ready (score 85): Why Your Website Needs an AI Agent"}
+{"t": 1794941563.0148516, "msg": "Clip ready (score 85): Why Your Website Bounce Rate Is High"}
+{"t": 1794941923.441071, "msg": "Clip ready (score 90): The Secret to Selling to Small Businesses"}
+{"t": 1794941925.9338722, "msg": "Clip ready (score 90): The golden rule of using AI in business"}
+{"t": 1794943966.2994263, "msg": "Auto-clipping armed: tracking future uploads (seeded 6 existing videos)"}
+{"t": 1795102929.4224377, "msg": "New upload detected: 'Top Psychiatrist: What 1000+ Brain Scans Reveal About The Killers  | Daniel Amen | FO590 Raj Shamani'. Auto-clipping 10 clips."}
+{"t": 1795103726.9962554, "msg": "Clip failed: 001e1210a06c0] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001e11f332400] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103735.5249202, "msg": "Clip failed: 002842576e500] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000028425710280] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103770.9024973, "msg": "Clip failed: 0027f7bf10a80] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 0000027f79f92740] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103811.9756038, "msg": "Clip failed: 001eac0a90d40] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001eabeb53f00] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103827.3597732, "msg": "Clip failed: 00192112a0400] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001920f54f400] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103844.5137262, "msg": "Clip failed: 00200cae90580] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 00000200c90033c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103859.7028122, "msg": "Clip failed: finished with error code: -542398533 (Generic error in an external library)\n[vost#0:0/libx264 @ 000002784a530840] Terminating thread with return code -542398533 (Generic error in an external library)\n"}
+{"t": 1795103875.9530723, "msg": "Clip failed: 00275b79b6840] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 00000275b5f15440] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103891.4496024, "msg": "Clip failed: 001e20f466cc0] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001e20d8f07c0] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103907.7130125, "msg": "Clip failed: 001d6759ec240] Terminating thread with return code -22 (Invalid argument)\n[out#0/mp4 @ 000001d6759af480] Nothing was written into output file, because at least one of its streams received no packets.\n"}
+{"t": 1795103908.5560207, "msg": "Video finished: Interrupted - Retry available (0/10 clips rendered in 979s): Top Psychiatrist: What 1000+ Brain Scans Reveal About The Killers  | Daniel Amen | FO590 Raj Shamani"}
+{"t": 1795361827.976317, "msg": "New upload detected: 'What It's Really Like Inside The World's Deadliest Gangs | Mariana Van Zeller | FO591 Raj Shamani'. Auto-clipping 10 clips."}
+{"t": 1795363199.0005076, "msg": "Clip ready (score 92): Hitman Makes $1,500 Per Kill Admits He's a Bad Person"}
+{"t": 1795363211.1440828, "msg": "Clip ready (score 88): Woman Defies Expectations in Gang Gunfight"}
+{"t": 1795363249.0829015, "msg": "Clip ready (score 92): Teen's Suicide After Sextortion Scam Exposed"}
+{"t": 1795363255.4217553, "msg": "Clip ready (score 88): Scammer Watches Victim Kill Himself On Video Call"}
+{"t": 1795363256.0406387, "msg": "Video finished: Done (4/4 clips rendered in 1063s): How Black Markets Secretly Run A Third Of The World | Mariana Van Zeller | FO591 Raj Shamani"}
