@@ -18,8 +18,20 @@ MODEL_PATH = Path(__file__).resolve().parent / "models" / "face_detection_yunet_
 _DETECTOR = None
 
 
+def _ensure_model():
+    if not MODEL_PATH.is_file():
+        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            import urllib.request
+            url = "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
+            urllib.request.urlretrieve(url, MODEL_PATH)
+        except Exception:
+            pass
+
+
 def _get_detector(w: int, h: int):
     global _DETECTOR
+    _ensure_model()
     if not MODEL_PATH.is_file():
         return None
     try:

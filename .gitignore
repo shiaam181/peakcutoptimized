@@ -16,6 +16,9 @@ storage.json
 *.log
 
 # ---- this computer only
+studio/models/*.onnx
+studio/fonts/*.ttf
+web/brand/*.mp4
 .claude/
 CLAUDE.local.md
 .vscode/

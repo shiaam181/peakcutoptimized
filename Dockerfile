@@ -3,7 +3,7 @@
 FROM python:3.11-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg ca-certificates bzip2 fonts-noto-core fonts-noto-cjk \
+ && apt-get install -y --no-install-recommends ffmpeg ca-certificates bzip2 curl fonts-noto-core fonts-noto-cjk \
  && rm -rf /var/lib/apt/lists/*
 
 # yt-dlp needs a JavaScript runtime for YouTube
@@ -20,6 +20,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY studio studio
 COPY web web
 COPY GAMING.md .
+
+# Ensure ONNX face detection model and fonts are present in container
+RUN mkdir -p studio/models studio/fonts \
+ && [ -f studio/models/face_detection_yunet_2023mar.onnx ] || curl -fsSL -o studio/models/face_detection_yunet_2023mar.onnx https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx \
+ && [ -f studio/fonts/Anton-Regular.ttf ] || curl -fsSL -o studio/fonts/Anton-Regular.ttf https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf \
+ && [ -f studio/fonts/Poppins-ExtraBold.ttf ] || curl -fsSL -o studio/fonts/Poppins-ExtraBold.ttf https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-ExtraBold.ttf
 
 # Setup /data writable by user 1000
 RUN mkdir -p /data && chown -R 1000:1000 /data /app
