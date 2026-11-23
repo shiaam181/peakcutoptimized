@@ -65,6 +65,21 @@ class _Quiet:
 
 def resolve(url: str) -> dict:
     """Ask yt-dlp for the stream's playable address. Raises NotLive if the channel is offline."""
+    # For YouTube channel URLs, resolve to canonical watch URL first for instant lookup
+    if media.is_youtube(url) and not ("watch?v=" in url or "/v/" in url or ("/live/" in url and len(url.split("/live/")[1].split("?")[0]) == 11)):
+        try:
+            from . import profiles
+            base = re.sub(r"/(live|videos|streams|featured)/?$", "", url.split("?")[0].rstrip("/"))
+            info_live = profiles.live_shared("YouTube", base)
+            embed_id = info_live.get("embed")
+            if info_live.get("live") and embed_id:
+                url = f"https://www.youtube.com/watch?v={embed_id}"
+            elif not info_live.get("live"):
+                raise NotLive("This channel is not live right now.")
+        except NotLive:
+            raise
+        except Exception:
+            pass
     import yt_dlp
     opts = {
         "quiet": True,
@@ -273,14 +288,16 @@ class Session:
                 info = resolve(url)
             except NotLive as e:
                 fails += 1
-                if fails < 5 and not self.stop_flag.is_set():
-                    self.job["stage"] = f"Connecting to stream (attempt {fails + 1}/5)..."
+                if "not live right now" in str(e).lower() or fails >= 4:
+                    if self.samples == 0:
+                        self.job["error"] = f"Could not start recording: {e}"
+                    break
+                if not self.stop_flag.is_set():
+                    self.job["stage"] = f"Connecting to stream (attempt {fails + 1}/4)..."
                     jobs.save(self.job)
-                    self.stop_flag.wait(4)
+                    ctx.bump()
+                    self.stop_flag.wait(3)
                     continue
-                if self.samples == 0:
-                    self.job["error"] = f"Could not start recording: {e}"
-                break
             if self.stop_flag.is_set():     # stop() came while the stream address was being looked up
                 break
             if not self.job.get("uploader"):
