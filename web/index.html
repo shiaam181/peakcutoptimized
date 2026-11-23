@@ -1240,7 +1240,8 @@ function statusBadge(c) {
   return `<span class="sbadge"><i></i>Offline${feats ? " · " + feats : ""}</span>`;
 }
 const cav = c => { const r = c.live_job || liveOn(c).length ? " ring" : "";
-  return c.profile?.pic && c.profile.channel === c.channel ? `<img class="avatar${r}" src="${avatarUrl(c)}" alt="">` : `<span class="avatar${r}">${esc((c.name || "?")[0].toUpperCase())}</span>`; };
+  const initial = esc((c.name || "?")[0].toUpperCase());
+  return c.profile?.pic && c.profile.channel === c.channel ? `<img class="avatar${r}" src="${avatarUrl(c)}" alt="${esc(c.name || '')}" onerror="this.onerror=null;this.outerHTML='<span class=\\'avatar${r}\\'>${initial}</span>'">` : `<span class="avatar${r}">${initial}</span>`; };
 const GRADS = [["#FF8B33", "#FFB27A"], ["#7C5CFF", "#B9A7FF"], ["#0EA5E9", "#7DD3FC"], ["#10B981", "#6EE7B7"],
                ["#F43F5E", "#FDA4AF"], ["#F59E0B", "#FDE68A"], ["#EC4899", "#F9A8D4"], ["#14B8A6", "#99F6E4"]];
 function meAvatar(u) {
@@ -1963,7 +1964,7 @@ function channelRows(c) {
     if (!url) return `<div class="chan">${platLogo(k)}<input id="chan_${k}" placeholder="${PLAT[k].hint}" aria-label="${PLAT[k].name} channel link">
       <button class="btn sm" data-act="chadd" data-p="${k}">Connect</button></div>`;
     const ok = pr && pr.channel === url;
-    return `<div class="chan">${platLogo(k)}${ok && pr.pic ? `<img class="pic" src="${avatarUrl(c, k)}" alt="">` : ""}
+    return `<div class="chan">${platLogo(k)}${ok && pr.pic ? `<img class="pic" src="${avatarUrl(c, k)}" alt="" onerror="this.style.display='none'">` : ""}
       <div class="who"><b>${esc(ok && pr.name ? pr.name : url)}</b><span>${esc([PLAT[k].name, ok ? pr.followers : "Looking it up…"].filter(Boolean).join(" · "))}</span></div>
       ${ok && pr.live_at ? (pr.live ? `<span class="sbadge live"><i></i>Live${pr.viewers ? " · " + fmtK(pr.viewers) : ""}</span>` : `<span class="sbadge">Offline</span>`) : ""}
       ${many ? `<label class="main" title="Start recording uses this channel unless another one is live"><input type="radio" name="mainch" data-act="chmain" data-p="${k}" ${c.channel === url ? "checked" : ""}>Record from</label>` : ""}

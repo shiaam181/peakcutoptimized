@@ -1257,12 +1257,60 @@ def creator_avatar(cid: str, p: str = ""):
     c = creators.get(cid)
     if not c:
         raise HTTPException(404)
-    key = p if p in creators.PLATFORMS else creators.platform_key(c["channel"])
+    key = p if p in creators.PLATFORMS else (creators.platform_key(c.get("channel", "")) or "youtube")
     prof = (c.get("profiles") or {}).get(key) or {}
     f = creators.root(cid) / f"avatar-{key}.img"
-    if not f.is_file() or prof.get("pic") not in ("image/jpeg", "image/png", "image/webp"):
-        raise HTTPException(404)
-    return FileResponse(f, media_type=prof["pic"], headers={"Cache-Control": "private, max-age=86400"})
+    if not f.is_file():
+        url = (c.get("channels") or {}).get(key) or c.get("channel")
+        if url:
+            try:
+                fetched = profiles.fetch(url)
+                pic = fetched.get("pic")
+                if pic and pic[0]:
+                    f.parent.mkdir(parents=True, exist_ok=True)
+                    f.write_bytes(pic[0])
+                    prof["pic"] = pic[1]
+                    with creators._lock:
+                        cr = creators.get(cid)
+                        if cr:
+                            cr.setdefault("profiles", {})[key] = {**fetched, "pic": pic[1], "at": time.time(), "channel": url}
+                            creators._write(cr)
+            except Exception:
+                pass
+    if f.is_file() and prof.get("pic") in ("image/jpeg", "image/png", "image/webp"):
+        return FileResponse(f, media_type=prof["pic"], headers={"Cache-Control": "private, max-age=86400"})
+    
+    name = (c.get("name") or "?").strip()
+    initial = (name[0] if name else "?").upper()
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#FF8B33"/><text x="40" y="49" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="32" font-weight="700" fill="#2A1A12" text-anchor="middle">{initial}</text></svg>'
+    return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "private, max-age=3600"})
+
+
+@app.post("/api/creators/{cid}/avatar")
+async def upload_creator_avatar(cid: str, request: Request, p: str = ""):
+    c = creators.get(cid)
+    if not c:
+        raise HTTPException(404, "Creator not found")
+    key = p if p in creators.PLATFORMS else (creators.platform_key(c.get("channel", "")) or "youtube")
+    body = await request.body()
+    if not body or len(body) > 2_000_000:
+        raise HTTPException(400, "Image must be under 2MB")
+    ctype = "image/jpeg"
+    if body.startswith(b"\x89PNG"):
+        ctype = "image/png"
+    elif body.startswith(b"RIFF") and b"WEBP" in body[:16]:
+        ctype = "image/webp"
+    f = creators.root(cid) / f"avatar-{key}.img"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_bytes(body)
+    with creators._lock:
+        cr = creators.get(cid)
+        if cr:
+            cr.setdefault("profiles", {}).setdefault(key, {})["pic"] = ctype
+            cr["profiles"][key]["at"] = time.time()
+            creators._write(cr)
+    ctx.bump()
+    return {"ok": True, "cid": cid}
 
 
 @app.get("/api/creators")
