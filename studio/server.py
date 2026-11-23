@@ -1268,31 +1268,36 @@ def creator_avatar(cid: str, p: str = ""):
     prof = (c.get("profiles") or {}).get(key) or {}
     f = creators.root(cid) / f"avatar-{key}.img"
     if not f.is_file():
-        seed_f = Path(__file__).parent / "seed_data" / "creators" / cid / f"avatar-{key}.img"
-        if seed_f.is_file():
+        # Check seed avatars.json
+        try:
+            seed_json = Path(__file__).parent / "seed_data" / "avatars.json"
+            if seed_json.is_file():
+                import base64
+                with open(seed_json, "r", encoding="utf-8") as jf:
+                    seed_avatars = json.load(jf)
+                if cid in seed_avatars:
+                    img_bytes = base64.b64decode(seed_avatars[cid])
+                    f.parent.mkdir(parents=True, exist_ok=True)
+                    f.write_bytes(img_bytes)
+        except Exception:
+            pass
+    if not f.is_file():
+        url = (c.get("channels") or {}).get(key) or c.get("channel")
+        if url:
             try:
-                f.parent.mkdir(parents=True, exist_ok=True)
-                import shutil
-                shutil.copy2(seed_f, f)
+                fetched = profiles.fetch(url)
+                pic = fetched.get("pic")
+                if pic and pic[0]:
+                    f.parent.mkdir(parents=True, exist_ok=True)
+                    f.write_bytes(pic[0])
+                    prof["pic"] = pic[1]
+                    with creators._lock:
+                        cr = creators.get(cid)
+                        if cr:
+                            cr.setdefault("profiles", {})[key] = {**fetched, "pic": pic[1], "at": time.time(), "channel": url}
+                            creators._write(cr)
             except Exception:
                 pass
-        else:
-            url = (c.get("channels") or {}).get(key) or c.get("channel")
-            if url:
-                try:
-                    fetched = profiles.fetch(url)
-                    pic = fetched.get("pic")
-                    if pic and pic[0]:
-                        f.parent.mkdir(parents=True, exist_ok=True)
-                        f.write_bytes(pic[0])
-                        prof["pic"] = pic[1]
-                        with creators._lock:
-                            cr = creators.get(cid)
-                            if cr:
-                                cr.setdefault("profiles", {})[key] = {**fetched, "pic": pic[1], "at": time.time(), "channel": url}
-                                creators._write(cr)
-                except Exception:
-                    pass
     if f.is_file():
         media_type = prof.get("pic")
         if media_type not in ("image/jpeg", "image/png", "image/webp"):
