@@ -22,10 +22,7 @@ COPY web web
 COPY GAMING.md .
 
 # Ensure ONNX face detection model and fonts are present in container
-RUN mkdir -p studio/models studio/fonts \
- && [ -f studio/models/face_detection_yunet_2023mar.onnx ] || curl -fsSL -o studio/models/face_detection_yunet_2023mar.onnx https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx \
- && [ -f studio/fonts/Anton-Regular.ttf ] || curl -fsSL -o studio/fonts/Anton-Regular.ttf https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf \
- && [ -f studio/fonts/Poppins-ExtraBold.ttf ] || curl -fsSL -o studio/fonts/Poppins-ExtraBold.ttf https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-ExtraBold.ttf
+RUN python -c "import urllib.request, os; os.makedirs('studio/models', exist_ok=True); os.makedirs('studio/fonts', exist_ok=True); urllib.request.urlretrieve('https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx', 'studio/models/face_detection_yunet_2023mar.onnx'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf', 'studio/fonts/Anton-Regular.ttf'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-ExtraBold.ttf', 'studio/fonts/Poppins-ExtraBold.ttf'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/archivoblack/ArchivoBlack-Regular.ttf', 'studio/fonts/ArchivoBlack-Regular.ttf')"
 
 # Setup /data writable by user 1000
 RUN mkdir -p /data && chown -R 1000:1000 /data /app
