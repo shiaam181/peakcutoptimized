@@ -795,7 +795,8 @@ def _run_job(job):
             heard[i] = ahead.submit(ctx.bind(transcribe.transcribe), audio[a_:b_], tp)
 
     game = games.detect(job.get("title", ""))
-    static = quality.static_ranges(src_file) if config.SKIP_STATIC and src_file else []
+    src_file = job.get("source_path") or (str(d / "source.mp4") if (d / "source.mp4").is_file() else (src.get("path") if src.get("type") == "file" else None))
+    static = quality.static_ranges(src_file) if config.SKIP_STATIC and src_file and Path(src_file).is_file() else []
     face = False
 
     for bi, (a, b) in enumerate(blocks):
