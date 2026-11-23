@@ -1,11 +1,12 @@
 ---
-title: PeakCut
+title: ShineCut
 emoji: ✂️
-colorFrom: orange
-colorTo: red
+colorFrom: red
+colorTo: purple
 sdk: docker
 app_port: 7860
 pinned: false
+license: mit
 ---
 
 # PeakCut
