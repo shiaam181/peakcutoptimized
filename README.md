@@ -1,3 +1,13 @@
+---
+title: PeakCut
+emoji: ✂️
+colorFrom: orange
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # PeakCut
 
 Turn long videos and live streams into captioned vertical clips, ready to post. Free and open source: run it on
