@@ -19,7 +19,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY studio studio
 COPY web web
-COPY GAMING.md .
 
 # Ensure ONNX face detection model and fonts are present in container
 RUN python -c "import urllib.request, os; os.makedirs('studio/models', exist_ok=True); os.makedirs('studio/fonts', exist_ok=True); urllib.request.urlretrieve('https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx', 'studio/models/face_detection_yunet_2023mar.onnx'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf', 'studio/fonts/Anton-Regular.ttf'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-ExtraBold.ttf', 'studio/fonts/Poppins-ExtraBold.ttf'); urllib.request.urlretrieve('https://github.com/google/fonts/raw/main/ofl/archivoblack/ArchivoBlack-Regular.ttf', 'studio/fonts/ArchivoBlack-Regular.ttf')"
