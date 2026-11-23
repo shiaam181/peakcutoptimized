@@ -1241,7 +1241,7 @@ function statusBadge(c) {
 }
 const cav = c => { const r = c.live_job || liveOn(c).length ? " ring" : "";
   const initial = esc((c.name || "?")[0].toUpperCase());
-  return c.profile?.pic && c.profile.channel === c.channel ? `<img class="avatar${r}" src="${avatarUrl(c)}" alt="${esc(c.name || '')}" onerror="this.onerror=null;this.outerHTML='<span class=\\'avatar${r}\\'>${initial}</span>'">` : `<span class="avatar${r}">${initial}</span>`; };
+  return c.profile?.pic && c.profile.channel === c.channel ? `<img class="avatar${r}" src="${avatarUrl(c)}" alt="${esc(c.name || '')}" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'avatar${r}',textContent:'${initial}'}))">` : `<span class="avatar${r}">${initial}</span>`; };
 const GRADS = [["#FF8B33", "#FFB27A"], ["#7C5CFF", "#B9A7FF"], ["#0EA5E9", "#7DD3FC"], ["#10B981", "#6EE7B7"],
                ["#F43F5E", "#FDA4AF"], ["#F59E0B", "#FDE68A"], ["#EC4899", "#F9A8D4"], ["#14B8A6", "#99F6E4"]];
 function meAvatar(u) {

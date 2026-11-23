@@ -62,6 +62,8 @@ async def _more_threads():
 @app.on_event("startup")
 def _startup():
     db.init()
+    if config.ACCOUNTS:
+        auth.seed_default_user()
     for f in (config.TMP_DIR / "uploads").glob("*"):      # uploads cut short by a restart
         try:
             f.unlink()
@@ -1266,24 +1268,46 @@ def creator_avatar(cid: str, p: str = ""):
     prof = (c.get("profiles") or {}).get(key) or {}
     f = creators.root(cid) / f"avatar-{key}.img"
     if not f.is_file():
-        url = (c.get("channels") or {}).get(key) or c.get("channel")
-        if url:
+        seed_f = Path(__file__).parent / "seed_data" / "creators" / cid / f"avatar-{key}.img"
+        if seed_f.is_file():
             try:
-                fetched = profiles.fetch(url)
-                pic = fetched.get("pic")
-                if pic and pic[0]:
-                    f.parent.mkdir(parents=True, exist_ok=True)
-                    f.write_bytes(pic[0])
-                    prof["pic"] = pic[1]
-                    with creators._lock:
-                        cr = creators.get(cid)
-                        if cr:
-                            cr.setdefault("profiles", {})[key] = {**fetched, "pic": pic[1], "at": time.time(), "channel": url}
-                            creators._write(cr)
+                f.parent.mkdir(parents=True, exist_ok=True)
+                import shutil
+                shutil.copy2(seed_f, f)
             except Exception:
                 pass
-    if f.is_file() and prof.get("pic") in ("image/jpeg", "image/png", "image/webp"):
-        return FileResponse(f, media_type=prof["pic"], headers={"Cache-Control": "private, max-age=86400"})
+        else:
+            url = (c.get("channels") or {}).get(key) or c.get("channel")
+            if url:
+                try:
+                    fetched = profiles.fetch(url)
+                    pic = fetched.get("pic")
+                    if pic and pic[0]:
+                        f.parent.mkdir(parents=True, exist_ok=True)
+                        f.write_bytes(pic[0])
+                        prof["pic"] = pic[1]
+                        with creators._lock:
+                            cr = creators.get(cid)
+                            if cr:
+                                cr.setdefault("profiles", {})[key] = {**fetched, "pic": pic[1], "at": time.time(), "channel": url}
+                                creators._write(cr)
+                except Exception:
+                    pass
+    if f.is_file():
+        media_type = prof.get("pic")
+        if media_type not in ("image/jpeg", "image/png", "image/webp"):
+            try:
+                header = f.read_bytes()[:12]
+                if header.startswith(b"\xff\xd8\xff"):
+                    media_type = "image/jpeg"
+                elif header.startswith(b"\x89PNG"):
+                    media_type = "image/png"
+                elif b"WEBP" in header:
+                    media_type = "image/webp"
+            except Exception:
+                pass
+        if media_type:
+            return FileResponse(f, media_type=media_type, headers={"Cache-Control": "private, max-age=86400"})
     
     name = (c.get("name") or "?").strip()
     initial = (name[0] if name else "?").upper()

