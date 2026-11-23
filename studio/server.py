@@ -133,6 +133,10 @@ class Gate:
         admin_area = path == "/admin" or path.startswith(("/admin/", "/api/admin/"))
         if config.ACCOUNTS:
             cookie = req.cookies.get(auth.COOKIE, "")
+            if not cookie:
+                auth_hdr = req.headers.get("authorization", "")
+                if auth_hdr.lower().startswith("bearer "):
+                    cookie = auth_hdr[7:].strip()
             user = auth._sess.get(auth._h(cookie)) if cookie and not admin_area else None      # remembered: no database, no thread hop
             user = user[1] if user and time.time() - user[0] < auth.SESS_FOR else (
                 await run_in_threadpool(auth.user_for, cookie, admin_area) if cookie else None)
@@ -494,8 +498,8 @@ def public_config():
 
 def _signed_in(request: Request, user, first: bool, redirect=None):
     token = auth.start_session(user.id, _ip(request), request.headers.get("user-agent", ""))
-    resp = RedirectResponse(redirect, 303) if redirect else JSONResponse({"user": auth.public(user)})
-    resp.set_cookie(**auth.cookie_args(token))
+    resp = RedirectResponse(redirect, 303) if redirect else JSONResponse({"user": auth.public(user), "token": token})
+    resp.set_cookie(**auth.cookie_args(token, request))
     return resp
 
 
@@ -572,7 +576,12 @@ def login(request: Request, body: dict = Body(...)):
 
 @app.post("/api/auth/logout")
 def logout(request: Request):
-    auth.end_session(request.cookies.get(auth.COOKIE, ""))
+    token = request.cookies.get(auth.COOKIE, "")
+    if not token:
+        auth_hdr = request.headers.get("authorization", "")
+        if auth_hdr.lower().startswith("bearer "):
+            token = auth_hdr[7:].strip()
+    auth.end_session(token)
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(auth.COOKIE, path="/")
     return resp

@@ -1021,9 +1021,19 @@ const clock = t => new Date(t * 1000).toLocaleString([], {weekday:"short", hour:
 const when = t => new Date(t * 1000).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
 const opts = (map, val) => Object.entries(map).map(([k, v]) => `<option value="${esc(k)}"${String(k) === String(val) ? " selected" : ""}>${esc(v)}</option>`).join("");
 
-async function api(path, opt) {
+const savedToken = (() => { try { return localStorage.getItem("shinecut_session") || ""; } catch { return ""; } })();
+
+async function api(path, opt = {}) {
+  opt = opt || {};
+  if (savedToken) {
+    opt.headers = Object.assign({}, opt.headers || {}, {"Authorization": "Bearer " + savedToken});
+  }
   const r = await fetch(path, opt);
-  if (r.status === 401) { location.href = "/login"; throw new Error("Please sign in."); }
+  if (r.status === 401) {
+    try { localStorage.removeItem("shinecut_session"); } catch {}
+    location.href = "/login";
+    throw new Error("Please sign in.");
+  }
   if (!r.ok) { let d = r.statusText; try { d = (await r.json()).detail || d; } catch {} throw new Error(typeof d === "string" ? d : "Something went wrong"); }
   return r.json();
 }
@@ -1716,6 +1726,7 @@ async function sendBig(f, who) {
     const x = new XMLHttpRequest();
     x.open("PUT", `/api/upload/${s.id}/${i}`);
     x.setRequestHeader("Content-Type", "application/octet-stream");
+    if (savedToken) x.setRequestHeader("Authorization", "Bearer " + savedToken);
     x.upload.onprogress = e => { sent[i] = e.loaded; show(); };
     x.onload = () => {
       if (x.status === 401) { location.href = "/login"; return; }
@@ -1752,6 +1763,7 @@ function sendFile(f, who) {
     const x = new XMLHttpRequest(), fd = new FormData();
     fd.append("file", f.file); fd.append("options", JSON.stringify(jobOptions())); fd.append("creator", who);
     x.open("POST", "/api/upload");
+    if (savedToken) x.setRequestHeader("Authorization", "Bearer " + savedToken);
     x.upload.onprogress = e => { if (e.lengthComputable) { f.pct = Math.round(e.loaded / e.total * 100); drawAtt(); } };
     x.onload = () => {
       if (x.status === 401) { location.href = "/login"; return; }
@@ -2746,7 +2758,7 @@ document.addEventListener("click", async e => {
       await navigator.clipboard.writeText(text);
       return toast("Post text with hashtags copied!", "ok");
     }
-    if (a === "logout") { await api("/api/auth/logout", {method:"POST"}); location.href = "/"; return; }
+    if (a === "logout") { try { localStorage.removeItem("shinecut_session"); } catch {} await api("/api/auth/logout", {method:"POST"}); location.href = "/"; return; }
     if (a === "pwsave") {
       await send("/api/auth/password", {current:$("#pw_cur")?.value || "", new:$("#pw_new").value});
       toast("Password changed. Other devices were signed out.", "ok"); return drawSettings();

