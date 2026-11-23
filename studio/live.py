@@ -76,7 +76,7 @@ def resolve(url: str) -> dict:
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "socket_timeout": 30,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios", "web"]}},
+        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
@@ -284,7 +284,9 @@ class Session:
             if self.stop_flag.is_set():     # stop() came while the stream address was being looked up
                 break
             if not self.job.get("uploader"):
-                self.job.update(title=info["title"], uploader=info["uploader"])
+                self.job.update(title=info["title"], uploader=info["uploader"], stage="Starting stream ingest...")
+                jobs.save(self.job)
+                ctx.bump()
             self.part += 1
             with self.lock:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
@@ -802,6 +804,8 @@ class Session:
                     started = True
                     self.job.update(status="live", stage="Recording")
                     creators.log(cid, f"Recording started: {self.job['title']}")
+                    jobs.save(self.job)
+                    ctx.bump()
                 self._manual_step()
                 # Three ways the AI is asked: on the creator's schedule (every N minutes), and always, when the
                 # stream suddenly gets louder or chat busier, or when someone says "clip".
