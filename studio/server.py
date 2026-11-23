@@ -323,7 +323,7 @@ def _from_here(req, must_say=False) -> bool:
     parsed_netloc = urlparse(origin).netloc.lower()
     if parsed_netloc == netloc or origin == config.PUBLIC_URL.lower():
         return True
-    return parsed_netloc.endswith((".hf.space", ".huggingface.co"))
+    return parsed_netloc.endswith((".hf.space", ".huggingface.co", "lerify.shop"))
 
 
 def _own_address(host: str) -> bool:
@@ -335,7 +335,8 @@ def _own_address(host: str) -> bool:
     if (name in ("localhost", urlparse(config.PUBLIC_URL).hostname or "")
             or name.endswith(".localhost")
             or name.endswith(".hf.space")
-            or name.endswith(".huggingface.co")):
+            or name.endswith(".huggingface.co")
+            or name.endswith("lerify.shop")):
         return True
     try:
         ipaddress.ip_address(name)
