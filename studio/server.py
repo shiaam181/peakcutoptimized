@@ -331,8 +331,7 @@ def _own_address(host: str) -> bool:
     if (name in ("localhost", urlparse(config.PUBLIC_URL).hostname or "")
             or name.endswith(".localhost")
             or name.endswith(".hf.space")
-            or name.endswith(".huggingface.co")
-            or bool(config.env("PEAKCUT_TRUST_PROXY"))):
+            or name.endswith(".huggingface.co")):
         return True
     try:
         ipaddress.ip_address(name)
