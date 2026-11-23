@@ -47,7 +47,7 @@ VIDEO_TYPES = {".mp4", ".mov", ".mkv", ".webm", ".m4v", ".ts", ".flv"}
 CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; "
        "frame-src https://player.twitch.tv https://www.youtube-nocookie.com https://player.kick.com; "
-       "frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com")
+       "frame-ancestors 'self' https://huggingface.co https://*.huggingface.co https://*.hf.space; base-uri 'self'; form-action 'self' https://accounts.google.com")
 
 
 BOOT = f"{int(time.time()) % 100000:x}"     # part of every sync token, so pages reload their data after a restart
@@ -189,7 +189,11 @@ class Gate:
                         unchanged = True
                         message["status"] = 304
                         h[:] = [(k, v) for k, v in h if k.lower() not in (b"content-length", b"content-type", b"content-encoding")]
-                h += [(b"x-content-type-options", b"nosniff"), (b"x-frame-options", b"DENY"),
+                is_hf = bool(config.env("PEAKCUT_TRUST_PROXY")) or any(s in req.headers.get("host", "").lower() for s in (".hf.space", ".huggingface.co"))
+                sec_headers = [(b"x-content-type-options", b"nosniff")]
+                if not is_hf:
+                    sec_headers.append((b"x-frame-options", b"DENY"))
+                h += sec_headers + [
                       (b"referrer-policy", b"strict-origin-when-cross-origin"), (b"content-security-policy", CSP.encode()),
                       (b"permissions-policy", b"camera=(), microphone=(), geolocation=()")]
                 if config.HTTPS:
@@ -324,7 +328,11 @@ def _own_address(host: str) -> bool:
     import ipaddress
     name = host.strip().lower()
     name = name[1:name.index("]")] if name.startswith("[") and "]" in name else name.rsplit(":", 1)[0] if ":" in name else name
-    if name in ("localhost", urlparse(config.PUBLIC_URL).hostname or "") or name.endswith(".localhost"):
+    if (name in ("localhost", urlparse(config.PUBLIC_URL).hostname or "")
+            or name.endswith(".localhost")
+            or name.endswith(".hf.space")
+            or name.endswith(".huggingface.co")
+            or bool(config.env("PEAKCUT_TRUST_PROXY"))):
         return True
     try:
         ipaddress.ip_address(name)
