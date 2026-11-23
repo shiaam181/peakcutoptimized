@@ -4,6 +4,7 @@ FROM python:3.11-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg ca-certificates bzip2 curl fonts-noto-core fonts-noto-cjk \
+ && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 # yt-dlp needs a JavaScript runtime for YouTube
@@ -31,7 +32,10 @@ ENV PEAKCUT_DATA=/data \
     PEAKCUT_PORT=7860 \
     PORT=7860 \
     PEAKCUT_TRUST_PROXY=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 USER user
 

@@ -66,8 +66,22 @@ class _Quiet:
 def resolve(url: str) -> dict:
     """Ask yt-dlp for the stream's playable address. Raises NotLive if the channel is offline."""
     import yt_dlp
-    opts = {"quiet": True, "no_warnings": True, "noplaylist": True, "logger": _Quiet(),
-            "format": "b[height<=720]/bv*[height<=720]+ba/b", **media.cookie_opts()}
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "logger": _Quiet(),
+        "format": "b[height<=720]/bv*[height<=720]+ba/b",
+        "nocheckcertificate": True,
+        "prefer_insecure": True,
+        "legacyserverconnect": True,
+        "socket_timeout": 30,
+        "extractor_args": {"youtube": {"player_client": ["android", "ios", "web"]}},
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        **media.cookie_opts(),
+    }
     if media.is_youtube(url) and media.youtube_paused():
         raise NotLive(media.YT_BLOCKED)
     try:
@@ -259,12 +273,14 @@ class Session:
                 info = resolve(url)
             except NotLive as e:
                 fails += 1
-                if self.samples == 0 or fails >= 3:
-                    if self.samples == 0:
-                        self.job["error"] = f"Could not start recording: {e}"
-                    break
-                self.stop_flag.wait(10)
-                continue
+                if fails < 5 and not self.stop_flag.is_set():
+                    self.job["stage"] = f"Connecting to stream (attempt {fails + 1}/5)..."
+                    jobs.save(self.job)
+                    self.stop_flag.wait(4)
+                    continue
+                if self.samples == 0:
+                    self.job["error"] = f"Could not start recording: {e}"
+                break
             if self.stop_flag.is_set():     # stop() came while the stream address was being looked up
                 break
             if not self.job.get("uploader"):
@@ -273,10 +289,15 @@ class Session:
             with self.lock:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
-            cmd = ["ffmpeg", "-v", "error", "-reconnect", "1", "-reconnect_streamed", "1",
-                   "-reconnect_delay_max", "10"]
+            cmd = ["ffmpeg", "-v", "error"]
             for u in info["urls"]:
-                cmd += ["-i", u]
+                cmd += [
+                    "-tls_verify", "0",
+                    "-reconnect", "1",
+                    "-reconnect_streamed", "1",
+                    "-reconnect_delay_max", "10",
+                    "-i", u,
+                ]
             a_in = "1:a:0" if len(info["urls"]) > 1 else "0:a:0"
             cmd += ["-map", "0:v:0", "-map", a_in, "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
                     "-reset_timestamps", "1", "-segment_format", "mpegts", "-segment_list", f"{p}.csv",

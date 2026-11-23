@@ -1,6 +1,7 @@
 """Creator workspaces. Each user has their own: users/<user>/creators/<id>/{videos,live,creator.json,log.jsonl}."""
 import copy
 import json
+import os
 import re
 import threading
 import time
@@ -123,7 +124,7 @@ def _mine() -> dict:
         got = {}
         root_dir = _root()
         files = sorted(root_dir.glob("*/creator.json"))
-        if not files:
+        if not files and os.environ.get("PEAKCUT_TESTING") != "1":
             seed_dir = Path(__file__).parent / "seed_data"
             seed_creators = seed_dir / "creators"
             if seed_creators.exists():

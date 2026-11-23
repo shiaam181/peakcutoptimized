@@ -319,7 +319,11 @@ def _from_here(req, must_say=False) -> bool:
     origin = (req.headers.get("origin") or "").rstrip("/").lower()
     if not origin:
         return not must_say
-    return urlparse(origin).netloc == (req.headers.get("host") or "").lower() or origin == config.PUBLIC_URL.lower()
+    netloc = (req.headers.get("host") or "").lower()
+    parsed_netloc = urlparse(origin).netloc.lower()
+    if parsed_netloc == netloc or origin == config.PUBLIC_URL.lower():
+        return True
+    return parsed_netloc.endswith((".hf.space", ".huggingface.co"))
 
 
 def _own_address(host: str) -> bool:
