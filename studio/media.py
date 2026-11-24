@@ -105,16 +105,17 @@ def _ydl(opts):
     # a channel or playlist link is answered as "a list" straight away, never walked video by video
     return yt_dlp.YoutubeDL({
         "noplaylist": True, "quiet": True, "no_warnings": True, "logger": _Quiet(),
-        "extract_flat": "in_playlist", "playlistend": 1, "socket_timeout": 60,
+        "extract_flat": "in_playlist", "playlistend": 1, "socket_timeout": 30,
         "retries": 10, "fragment_retries": 10,
+        "source_address": "0.0.0.0",
         "nocheckcertificate": True,
         "prefer_insecure": True,
         "legacyserverconnect": True,
-        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+        "extractor_args": {"youtube": {"player_client": ["android", "ios", "mweb"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        "concurrent_fragment_downloads": 4, "js_runtimes": {"node": {}},
+        "concurrent_fragment_downloads": 4, "js_runtimes": {"deno": {}, "node": {}},
         **cookie_opts(), **opts
     })
 
@@ -133,11 +134,31 @@ def _biggest(job_dir: Path, stem: str) -> Path:
 
 def info(url: str) -> dict:
     """Title, channel and length, without downloading anything."""
-    with _youtube_guard(url), _ydl({}) as ydl:
-        i = ydl.extract_info(url, download=False)
-    return {"title": i.get("title") or "", "uploader": i.get("uploader") or i.get("channel") or "",
-            "duration": float(i.get("duration") or 0), "is_live": bool(i.get("is_live")),
-            "thumbnail": i.get("thumbnail") or "", "kind": i.get("_type") or "video"}
+    try:
+        with _youtube_guard(url), _ydl({}) as ydl:
+            i = ydl.extract_info(url, download=False)
+        return {"title": i.get("title") or "", "uploader": i.get("uploader") or i.get("channel") or "",
+                "duration": float(i.get("duration") or 0), "is_live": bool(i.get("is_live")),
+                "thumbnail": i.get("thumbnail") or "", "kind": i.get("_type") or "video"}
+    except Exception as e:
+        if is_youtube(url):
+            try:
+                import urllib.request, json
+                req = urllib.request.Request(f"https://www.youtube.com/oembed?url={url}&format=json",
+                                             headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=6) as r:
+                    data = json.loads(r.read())
+                return {
+                    "title": data.get("title") or "YouTube Video",
+                    "uploader": data.get("author_name") or "YouTube Creator",
+                    "duration": 600.0,
+                    "is_live": False,
+                    "thumbnail": data.get("thumbnail_url") or "",
+                    "kind": "video",
+                }
+            except Exception:
+                pass
+        raise
 
 
 def youtube_words(url: str):

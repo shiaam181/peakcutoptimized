@@ -89,11 +89,13 @@ def resolve(url: str) -> dict:
         "nocheckcertificate": True,
         "prefer_insecure": True,
         "legacyserverconnect": True,
+        "source_address": "0.0.0.0",
         "socket_timeout": 15,
-        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+        "extractor_args": {"youtube": {"player_client": ["android", "ios", "mweb"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
+        "js_runtimes": {"deno": {}, "node": {}},
         **media.cookie_opts(),
     }
     if media.is_youtube(url) and media.youtube_paused():
