@@ -57,6 +57,8 @@ def is_youtube(url: str) -> bool:
 
 
 def youtube_paused() -> bool:
+    if cookie_opts().get("cookiefile"):
+        return False
     return time.time() < _yt_refused_until
 
 
@@ -69,7 +71,7 @@ def check_youtube(url: str):
 def note_refusal(url: str, err) -> bool:
     """If this error is YouTube refusing the server, pause YouTube links for a while. True if it was."""
     global _yt_refused_until
-    if is_youtube(url) and _BOT_CHECK.search(str(err)):
+    if is_youtube(url) and not cookie_opts().get("cookiefile") and _BOT_CHECK.search(str(err)):
         _yt_refused_until = time.time() + YT_PAUSE
         return True
     return False
@@ -117,6 +119,51 @@ class _Quiet:
     def error(self, m): pass
 
 
+def format_netscape_cookies(raw: str) -> str:
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    if "\\n" in raw and "\n" not in raw:
+        raw = raw.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+
+    # If JSON array from browser extension:
+    if raw.startswith("[") and raw.endswith("]"):
+        try:
+            items = json.loads(raw)
+            lines = ["# Netscape HTTP Cookie File"]
+            for c in items:
+                domain = str(c.get("domain") or ".youtube.com")
+                include_sub = "TRUE" if domain.startswith(".") else "FALSE"
+                path = str(c.get("path") or "/")
+                secure = "TRUE" if c.get("secure", False) else "FALSE"
+                try:
+                    expiry = str(int(c.get("expirationDate") or 2147483647))
+                except Exception:
+                    expiry = "2147483647"
+                name = str(c.get("name") or "").strip()
+                val = str(c.get("value") or "").strip()
+                if name:
+                    lines.append(f"{domain}\t{include_sub}\t{path}\t{secure}\t{expiry}\t{name}\t{val}")
+            if len(lines) > 1:
+                return "\n".join(lines)
+        except Exception:
+            pass
+
+    # If raw HTTP Cookie header (key=val; key=val):
+    if "=" in raw and "\t" not in raw and not raw.startswith("#"):
+        lines = ["# Netscape HTTP Cookie File"]
+        for pair in raw.split(";"):
+            if "=" in pair:
+                k, v = pair.split("=", 1)
+                k, v = k.strip(), v.strip()
+                if k and v:
+                    lines.append(f".youtube.com\tTRUE\t/\tTRUE\t2147483647\t{k}\t{v}")
+        if len(lines) > 1:
+            return "\n".join(lines)
+
+    return raw
+
+
 def cookie_opts() -> dict:
     """The YouTube cookies configured via environment variable, secret, or file."""
     f = config.DATA_DIR / "youtube-cookies.txt"
@@ -136,13 +183,11 @@ def cookie_opts() -> dict:
         if not ("\n" in raw or "\t" in raw or " " in raw) and Path(raw).is_file():
             return {"cookiefile": str(Path(raw))}
 
-        # If it's cookie content (Netscape or tab-separated):
-        if "\\n" in raw and "\n" not in raw:
-            raw = raw.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+        formatted = format_netscape_cookies(raw)
         try:
             f.parent.mkdir(parents=True, exist_ok=True)
-            if not f.is_file() or f.read_text(encoding="utf-8", errors="ignore") != raw:
-                f.write_text(raw, encoding="utf-8")
+            if not f.is_file() or f.read_text(encoding="utf-8", errors="ignore") != formatted:
+                f.write_text(formatted, encoding="utf-8")
             return {"cookiefile": str(f)}
         except Exception:
             pass
@@ -183,7 +228,7 @@ def _ydl(opts):
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "extractor_args": {
-            "youtube": {"player_client": ["android", "ios", "mweb"], "skip": ["authcheck"]},
+            "youtube": {"player_client": ["web", "mweb", "android", "ios"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
         "http_headers": {

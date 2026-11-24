@@ -1677,8 +1677,7 @@ def post_cookies(request: Request, body: dict = Body(default={})):
             except Exception:
                 pass
         return {"ok": True, "has_cookies": bool(media.cookie_opts())}
-    if "\\n" in text and "\n" not in text:
-        text = text.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+    text = media.format_netscape_cookies(text)
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(text, encoding="utf-8")
     return {"ok": True, "has_cookies": True}
