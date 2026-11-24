@@ -127,6 +127,7 @@ YT_TRANSCRIPT = env("PEAKCUT_YT_TRANSCRIPT", "1") != "0"
 # YouTube often refuses servers in data centres ("sign in to confirm you're not a bot"). Cookies from a signed-in
 # YouTube account get past that: an admin pastes them under Settings, Connected apps, and they are kept in this file.
 YT_COOKIES = Path(env("PEAKCUT_YT_COOKIES") or DATA_DIR / "youtube-cookies.txt")
+PROXY = env("PEAKCUT_PROXY") or env("HTTPS_PROXY") or env("HTTP_PROXY") or ""
 # the compact model for processors; a machine with a graphics card sets PEAKCUT_ASR_MODEL to the full-precision one
 ASR_MODEL_NAME = env("PEAKCUT_ASR_MODEL", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8")
 ASR_MODEL_DIR = MODELS_DIR / ASR_MODEL_NAME

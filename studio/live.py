@@ -97,6 +97,7 @@ def resolve(url: str) -> dict:
         },
         "js_runtimes": {"deno": {}, "node": {}},
         **media.cookie_opts(),
+        **media.proxy_opts(),
     }
     if media.is_youtube(url) and media.youtube_paused():
         raise NotLive(media.YT_BLOCKED)
@@ -311,6 +312,8 @@ class Session:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
             cmd = ["ffmpeg", "-v", "error"]
+            if config.PROXY:
+                cmd += ["-http_proxy", config.PROXY]
             for u in info["urls"]:
                 cmd += [
                     "-tls_verify", "0",

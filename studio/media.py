@@ -110,7 +110,21 @@ class _Quiet:
 
 def cookie_opts() -> dict:
     """The YouTube cookies an admin saved (Settings, Connected apps), if any. yt-dlp only sends them to YouTube."""
-    return {"cookiefile": str(config.YT_COOKIES)} if config.YT_COOKIES.is_file() else {}
+    if config.YT_COOKIES.is_file():
+        return {"cookiefile": str(config.YT_COOKIES)}
+    raw_cookies = (config.env("PEAKCUT_YT_COOKIES_TEXT") or "").strip()
+    if raw_cookies:
+        f = config.DATA_DIR / "youtube-cookies.txt"
+        if not f.is_file() or f.read_text(encoding="utf-8", errors="ignore") != raw_cookies:
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(raw_cookies, encoding="utf-8")
+        return {"cookiefile": str(f)}
+    return {}
+
+
+def proxy_opts() -> dict:
+    p = (config.PROXY or "").strip()
+    return {"proxy": p} if p else {}
 
 
 def _ydl(opts):
@@ -129,7 +143,7 @@ def _ydl(opts):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
         "concurrent_fragment_downloads": 4, "js_runtimes": {"deno": {}, "node": {}},
-        **cookie_opts(), **opts
+        **cookie_opts(), **proxy_opts(), **opts
     })
 
 
