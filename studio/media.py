@@ -12,6 +12,15 @@ import ssl
 
 try:
     if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_ssl_context_new = ssl.SSLContext.__new__
+        def _patched_ssl_context_new(cls, *args, **kwargs):
+            c = _orig_ssl_context_new(cls, *args, **kwargs)
+            try:
+                c.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            except Exception:
+                pass
+            return c
+        ssl.SSLContext.__new__ = _patched_ssl_context_new
         _orig_ssl_ctx = ssl.create_default_context
         def _patched_ssl_ctx(*args, **kwargs):
             c = _orig_ssl_ctx(*args, **kwargs)
@@ -29,8 +38,8 @@ NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 # ---------------------------------------------------------------- when YouTube refuses this server
 # YouTube sometimes refuses a server's downloads altogether ("sign in to confirm you're not a bot"). It is a
 # refusal of the server, not of one video, so once it happens YouTube links are turned away at once for a few
-# minutes, with a clear message, instead of each one waiting to fail. Then the next link simply tries again.
-YT_PAUSE = 600
+# seconds, with a clear message, instead of each one waiting to fail. Then the next link simply tries again.
+YT_PAUSE = 30
 _yt_refused_until = 0.0
 YT_BLOCKED = ("YouTube isn't letting PeakCut download videos right now. Upload the video file instead, or use a "
               "Twitch or Kick link. YouTube links will be tried again in a few minutes.")
@@ -170,9 +179,11 @@ def info(url: str) -> dict:
     except Exception as e:
         if is_youtube(url):
             try:
-                import urllib.request, json
-                req = urllib.request.Request(f"https://www.youtube.com/oembed?url={url}&format=json",
-                                             headers={"User-Agent": "Mozilla/5.0"})
+                import urllib.request, json, urllib.parse
+                clean_url = url.split("?")[0] if "youtu.be/" in url else url
+                encoded = urllib.parse.quote(clean_url, safe="")
+                req = urllib.request.Request(f"https://www.youtube.com/oembed?url={encoded}&format=json",
+                                             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
                 with urllib.request.urlopen(req, timeout=6) as r:
                     data = json.loads(r.read())
                 return {

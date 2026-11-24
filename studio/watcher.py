@@ -1,6 +1,29 @@
 """Watch creator channels for new video uploads and automatically create clips."""
 import logging
 import re
+import ssl
+
+try:
+    if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_ssl_context_new = ssl.SSLContext.__new__
+        def _patched_ssl_context_new(cls, *args, **kwargs):
+            c = _orig_ssl_context_new(cls, *args, **kwargs)
+            try:
+                c.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            except Exception:
+                pass
+            return c
+        ssl.SSLContext.__new__ = _patched_ssl_context_new
+        _orig_create_default_context = ssl.create_default_context
+        def _patched_create_default_context(*args, **kwargs):
+            ctx_ssl = _orig_create_default_context(*args, **kwargs)
+            ctx_ssl.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            return ctx_ssl
+        ssl.create_default_context = _patched_create_default_context
+        ssl._create_default_https_context = _patched_create_default_context
+except Exception:
+    pass
+
 import threading
 import time
 from urllib.parse import urlparse
@@ -52,6 +75,7 @@ def _fetch_youtube_rss(channel_url: str, limit: int = 5, channel_id: str = None)
         return []
     if clean and not re.match(r"^https?://", clean):
         clean = "https://" + clean
+    clean = re.sub(r"/(videos|streams|live|featured|shorts)/?$", "", clean)
     m = re.search(r"/channel/(UC[0-9A-Za-z_-]{22})", clean)
     cid = channel_id or (m.group(1) if m else None)
     if not cid:

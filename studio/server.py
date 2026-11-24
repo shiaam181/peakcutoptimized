@@ -20,6 +20,15 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 import ssl
 try:
     if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_ssl_context_new = ssl.SSLContext.__new__
+        def _patched_ssl_context_new(cls, *args, **kwargs):
+            c = _orig_ssl_context_new(cls, *args, **kwargs)
+            try:
+                c.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            except Exception:
+                pass
+            return c
+        ssl.SSLContext.__new__ = _patched_ssl_context_new
         _orig_create_default_context = ssl.create_default_context
         def _patched_create_default_context(*args, **kwargs):
             ctx_ssl = _orig_create_default_context(*args, **kwargs)

@@ -4,6 +4,28 @@ import json
 import re
 import socket
 import ssl
+
+try:
+    if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_ssl_context_new = ssl.SSLContext.__new__
+        def _patched_ssl_context_new(cls, *args, **kwargs):
+            c = _orig_ssl_context_new(cls, *args, **kwargs)
+            try:
+                c.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            except Exception:
+                pass
+            return c
+        ssl.SSLContext.__new__ = _patched_ssl_context_new
+        _orig_create_default_context = ssl.create_default_context
+        def _patched_create_default_context(*args, **kwargs):
+            ctx_ssl = _orig_create_default_context(*args, **kwargs)
+            ctx_ssl.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            return ctx_ssl
+        ssl.create_default_context = _patched_create_default_context
+        ssl._create_default_https_context = _patched_create_default_context
+except Exception:
+    pass
+
 import subprocess
 import threading
 import time
@@ -91,7 +113,7 @@ def resolve(url: str) -> dict:
         "legacyserverconnect": True,
         "source_address": "0.0.0.0",
         "socket_timeout": 15,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios", "mweb"]}},
+        "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
@@ -311,7 +333,13 @@ class Session:
             with self.lock:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
-            cmd = ["ffmpeg", "-v", "error"]
+            ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            cmd = [
+                "ffmpeg", "-v", "error",
+                "-user_agent", ua,
+                "-headers", f"User-Agent: {ua}\r\nReferer: https://www.youtube.com/\r\nOrigin: https://www.youtube.com\r\n",
+                "-rw_timeout", "15000000",
+            ]
             if config.PROXY:
                 cmd += ["-http_proxy", config.PROXY]
             for u in info["urls"]:
@@ -368,6 +396,13 @@ class Session:
                     proc.wait()
             fails = 0 if got > SR * 2 * 20 else fails + 1
             if fails >= 3:
+                if self.samples == 0 and not self.job.get("error"):
+                    errlog_tail = ""
+                    try:
+                        errlog_tail = (self.dir / "ffmpeg.log").read_text(encoding="utf-8", errors="ignore")[-200:].strip()
+                    except Exception:
+                        pass
+                    self.job["error"] = f"Could not stream video data: {errlog_tail or 'stream connection closed'}"
                 break
             self.stop_flag.wait(3)
 
