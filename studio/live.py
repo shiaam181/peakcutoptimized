@@ -52,8 +52,11 @@ def normalize(url: str) -> str:
     url = url.strip()
     if not re.match(r"^https?://", url):
         url = "https://" + url
-    m = re.match(r"^(https?://(?:www\.)?youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+))/?(?:[?#].*)?$", url)
-    return m.group(1) + "/live" if m else url
+    if "watch?v=" in url or "/v/" in url or ("/live/" in url and len(url.split("/live/")[1].split("?")[0]) == 11):
+        return url
+    clean = url.split("?")[0].rstrip("/")
+    m = re.match(r"^(https?://(?:www\.)?youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+))/?(?:[?#].*)?$", clean)
+    return m.group(1) + "/live" if m else clean
 
 
 class _Quiet:
@@ -74,10 +77,6 @@ def resolve(url: str) -> dict:
             embed_id = info_live.get("embed")
             if info_live.get("live") and embed_id:
                 url = f"https://www.youtube.com/watch?v={embed_id}"
-            elif not info_live.get("live"):
-                raise NotLive("This channel is not live right now.")
-        except NotLive:
-            raise
         except Exception:
             pass
     import yt_dlp

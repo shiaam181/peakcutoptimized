@@ -203,7 +203,7 @@ def _no_date(title: str) -> str:
 def live_now(platform: str, url: str) -> dict:
     """{live, viewers, title, started (unix time), embed}. `embed` is what the platform's own player needs:
     the Twitch login, the YouTube video id or the Kick channel name."""
-    url = url.rstrip("/")
+    url = url.split("?")[0].rstrip("/")
     off = {"live": False, "viewers": None, "title": "", "started": None, "embed": ""}
     path = urlparse(url).path.strip("/").split("/")
     if platform == "Kick":
@@ -220,15 +220,23 @@ def live_now(platform: str, url: str) -> dict:
             pass
         return {"live": True, "viewers": ls.get("viewer_count"), "title": ls.get("session_title") or "", "started": started, "embed": slug}
     if platform == "YouTube":
-        base = re.sub(r"/(live|videos|streams|featured)$", "", url)
+        base = re.sub(r"/(live|videos|streams|featured)/?$", "", url)
         _, raw = _get(base + "/live")
         html = raw.decode("utf-8", "replace")
-        if '"isLiveNow":true' not in html:
+        if '"isLiveNow":true' not in html and '"LIVE"' not in html:
             return off
         vid = (re.search(r'<link rel="canonical" href="https://www\.youtube\.com/watch\?v=([\w-]{11})"', html) or [None, ""])[1]
+        if not vid:
+            m_og = re.search(r'https://www\.youtube\.com/watch\?v=([\w-]{11})', _meta(html, "og:url"))
+            vid = m_og.group(1) if m_og else ""
+        if not vid:
+            m_vid = re.search(r'"videoId":"([\w-]{11})"', html)
+            vid = m_vid.group(1) if m_vid else ""
+        if not vid:
+            return off
         out = {"live": True, "viewers": None, "title": _meta(html, "og:title"), "started": None, "embed": vid}
         try:
-            i = _ydl_info(base + "/live")
+            i = _ydl_info(f"https://www.youtube.com/watch?v={vid}")
             out.update(viewers=i.get("concurrent_view_count"), title=_no_date(i.get("title")) or out["title"],
                        started=i.get("release_timestamp") or i.get("timestamp"), embed=i.get("id") or vid)
         except Exception:
@@ -258,7 +266,7 @@ def live_now(platform: str, url: str) -> dict:
 def live_shared(platform: str, url: str) -> dict:
     """live_now, asked at most once per channel every LIVE_SHARED_FOR seconds however many people follow it.
     If a thousand users have the same creator, the platform is asked once, not a thousand times."""
-    key = url.rstrip("/").lower()
+    key = re.sub(r"/(live|videos|streams|featured)/?$", "", url.split("?")[0].rstrip("/")).lower()
     got = _live.get(key)
     if got and time.time() - got[0] < LIVE_SHARED_FOR:
         return dict(got[1])
