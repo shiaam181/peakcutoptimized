@@ -13,8 +13,11 @@ from urllib.parse import urlparse
 
 from . import creators, ctx
 
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9"}
+UA = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
+}
 PIC_HOSTS = ("yt3.googleusercontent.com", "yt3.ggpht.com", "static-cdn.jtvnw.net", "files.kick.com")
 MAX_PIC = 600_000
 

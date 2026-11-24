@@ -176,7 +176,8 @@ def _ydl(opts):
         "legacyserverconnect": True,
         "extractor_args": {"youtube": {"player_client": ["android", "ios", "mweb"]}},
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
         },
         "concurrent_fragment_downloads": 4, "js_runtimes": {"deno": {}, "node": {}},
         **cookie_opts(), **proxy_opts(), **opts
@@ -209,8 +210,12 @@ def info(url: str) -> dict:
                 import urllib.request, json, urllib.parse
                 clean_url = url.split("?")[0] if "youtu.be/" in url else url
                 encoded = urllib.parse.quote(clean_url, safe="")
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
+                }
                 req = urllib.request.Request(f"https://www.youtube.com/oembed?url={encoded}&format=json",
-                                             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+                                             headers=headers)
                 with urllib.request.urlopen(req, timeout=6) as r:
                     data = json.loads(r.read())
                 return {

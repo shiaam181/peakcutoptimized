@@ -2118,8 +2118,20 @@ function drawOverview() {
   ];
   const filterPlat = S.trendFilter || "all";
   const trendStreams = filterPlat === "all" ? allStreams : allStreams.filter(s => (s.platform || "twitch").toLowerCase() === filterPlat);
-  const activeStreams = trendStreams.length ? trendStreams : allStreams;
-  if (!S.trendPick || !activeStreams.some(s => s.channel === S.trendPick)) {
+  const activeStreams = trendStreams;
+  if (!activeStreams.length && !S._fetchingTrend) {
+    S._fetchingTrend = true;
+    api(`/api/trending?platform=${filterPlat}`).then(t => {
+      S._fetchingTrend = false;
+      if (Array.isArray(t) && t.length) {
+        const others = (S.trending || []).filter(s => (s.platform || "twitch").toLowerCase() !== filterPlat);
+        S.trending = [...others, ...t];
+        S.trendPick = t[0].channel;
+        drawOverview();
+      }
+    }).catch(() => { S._fetchingTrend = false; });
+  }
+  if (activeStreams.length && (!S.trendPick || !activeStreams.some(s => s.channel === S.trendPick))) {
     S.trendPick = activeStreams[0].channel;
   }
   const curTrend = activeStreams.find(s => s.channel === S.trendPick) || activeStreams[0];
@@ -2137,6 +2149,7 @@ function drawOverview() {
         ${activeStreams.map(s => `<button type="button" class="t-pill ${S.trendPick === s.channel ? "on" : ""}" data-act="picktrend" data-ch="${esc(s.channel)}">${s.platform === 'youtube' ? '<span style=\"color:#FF0000;font-weight:bold;margin-right:4px\">▶</span>' : '<span style=\"color:#9146FF;font-weight:bold;margin-right:4px\">✦</span>'}${esc(s.name)}</button>`).join("")}
       </div>
     </div>
+    ${curTrend ? `
     <div class="trending-player-wrap">
       <iframe src="${playerSrc(curTrend.platform || "twitch", curTrend.embed || curTrend.channel)}" allowfullscreen="true" scrolling="no"></iframe>
     </div>
@@ -2153,7 +2166,7 @@ function drawOverview() {
         ${curTrend.platform === 'youtube' ? `<a href="${esc(curTrend.channel_url || curTrend.url || '#')}" target="_blank" rel="noopener" class="btn-gift" style="text-decoration:none">${ic("link")}Open Channel</a>` : `<button type="button" class="btn-follow" data-act="trendfollow" data-ch="${esc(curTrend.channel)}">${ic("heart")}Follow</button><button type="button" class="btn-gift" data-act="trendgift">${ic("gift")}Gift a Sub</button>`}
         <button type="button" class="btn primary" data-act="clipstream" data-ch="${esc(curTrend.channel)}" data-name="${esc(curTrend.name)}" data-plat="${esc(curTrend.platform || 'twitch')}" data-url="${esc(curTrend.url || '')}">${ic("scissors")}Clip this stream</button>
       </div>
-    </div>
+    </div>` : `<div style="padding:48px 24px;text-align:center;color:var(--ink-mid)">Loading live ${filterPlat === 'youtube' ? 'YouTube' : 'Twitch'} streams...</div>`}
   </div>`;
   const sum = k => o.creators.reduce((a, r) => a + r[k], 0);
   const d14 = k => (o.daily || []).reduce((a, d) => a + d[k], 0);
@@ -2697,7 +2710,22 @@ document.addEventListener("click", async e => {
       return drawOverview();
     }
     if (a === "trendfilter") {
-      S.trendFilter = d.plat || "all";
+      const plat = d.plat || "all";
+      S.trendFilter = plat;
+      api(`/api/trending?platform=${plat}`).then(t => {
+        if (Array.isArray(t) && t.length) {
+          if (plat === "all") {
+            S.trending = t;
+          } else {
+            const others = (S.trending || []).filter(s => (s.platform || "twitch").toLowerCase() !== plat);
+            S.trending = [...others, ...t];
+          }
+          if (!S.trendPick || !t.some(x => x.channel === S.trendPick)) {
+            S.trendPick = t[0].channel;
+          }
+          drawOverview();
+        }
+      }).catch(() => {});
       return drawOverview();
     }
     if (a === "trendfollow") {

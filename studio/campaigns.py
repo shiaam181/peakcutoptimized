@@ -498,6 +498,7 @@ def fetch_popular_youtube(limit: int = 15) -> list[dict]:
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
     }
     streams = []
     urls = ["https://www.youtube.com/gaming/live", "https://www.youtube.com/live"]
@@ -633,14 +634,21 @@ def get_trending(platform: str = "") -> list[dict]:
 
     yt = fetch_popular_youtube()
     tw = fetch_popular_twitch()
+    if not yt:
+        yt = [s for s in TRENDING_STREAMS if s.get("platform") == "youtube"]
+    if not tw:
+        tw = [s for s in TRENDING_STREAMS if s.get("platform") == "twitch"]
 
     if plat == "youtube":
-        return yt if yt else [s for s in TRENDING_STREAMS if s.get("platform") == "youtube"]
+        return yt
     if plat == "twitch":
-        return tw if tw else [s for s in TRENDING_STREAMS if s.get("platform") == "twitch"]
+        return tw
 
-    combined = yt + tw
-    if combined:
-        combined.sort(key=lambda s: s.get("viewers") or 0, reverse=True)
-        return combined[:20]
-    return TRENDING_STREAMS
+    combined = []
+    max_len = max(len(yt), len(tw))
+    for i in range(max_len):
+        if i < len(yt):
+            combined.append(yt[i])
+        if i < len(tw):
+            combined.append(tw[i])
+    return combined[:20] if combined else TRENDING_STREAMS

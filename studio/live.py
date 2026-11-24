@@ -115,7 +115,8 @@ def resolve(url: str) -> dict:
         "socket_timeout": 15,
         "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
         },
         "js_runtimes": {"deno": {}, "node": {}},
         **media.cookie_opts(),
