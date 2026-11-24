@@ -1692,7 +1692,7 @@ def post_cookies(request: Request, body: dict = Body(default={})):
     return {"ok": True, "has_cookies": True}
 
 
-@app.get("/api/test-stream")
+@app.get("/api/public/test-stream")
 def test_stream_diag(url: str = ""):
     if not url:
         url = "https://www.youtube.com/watch?v=kEgS7FQqfRM"
