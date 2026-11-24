@@ -119,9 +119,10 @@ def resolve(url: str) -> dict:
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "source_address": "0.0.0.0",
-        "socket_timeout": 20,
+        "socket_timeout": 12,
+        "retries": 3,
         "extractor_args": {
-            "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
+            "youtube": {"player_client": ["android", "tv", "web_safari", "mweb"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
         "http_headers": headers,
@@ -343,10 +344,11 @@ class Session:
                     continue
             if self.stop_flag.is_set():     # stop() came while the stream address was being looked up
                 break
-            if not self.job.get("uploader"):
-                self.job.update(title=info["title"], uploader=info["uploader"], stage="Buffering live stream...")
-                jobs.save(self.job)
-                ctx.bump()
+            self.job.update(title=info["title"] or self.job.get("title"),
+                            uploader=info["uploader"] or self.job.get("uploader"),
+                            stage="Buffering live stream...")
+            jobs.save(self.job)
+            ctx.bump()
             self.part += 1
             with self.lock:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
@@ -370,10 +372,10 @@ class Session:
                     "-i", u,
                 ]
             a_in = "1:a:0" if len(info["urls"]) > 1 else "0:a:0"
-            cmd += ["-map", "0:v:0", "-map", a_in, "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
+            cmd += ["-map", "0:v:0?", "-map", a_in + "?", "-c", "copy", "-f", "segment", "-segment_time", str(SEG_SEC),
                     "-reset_timestamps", "1", "-segment_format", "mpegts", "-segment_list", f"{p}.csv",
                     "-segment_list_type", "csv", f"{p}_%05d.ts",
-                    "-map", a_in, "-vn", "-ac", "1", "-ar", str(SR), "-f", "s16le", "pipe:1"]
+                    "-map", a_in + "?", "-vn", "-ac", "1", "-ar", str(SR), "-f", "s16le", "pipe:1"]
             with open(self.dir / "ffmpeg.log", "ab") as errlog:
                 proc = subprocess.Popen(cmd, cwd=self.buf, stdout=subprocess.PIPE, stderr=errlog,
                                         creationflags=media.NO_WINDOW)

@@ -292,14 +292,14 @@ def _ydl(opts):
     # a channel or playlist link is answered as "a list" straight away, never walked video by video
     return yt_dlp.YoutubeDL({
         "noplaylist": True, "quiet": True, "no_warnings": True, "logger": _Quiet(),
-        "extract_flat": "in_playlist", "playlistend": 1, "socket_timeout": 30,
-        "retries": 10, "fragment_retries": 10,
+        "extract_flat": "in_playlist", "playlistend": 1, "socket_timeout": 15,
+        "retries": 3, "fragment_retries": 3,
         "source_address": "0.0.0.0",
         "nocheckcertificate": True,
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "extractor_args": {
-            "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
+            "youtube": {"player_client": ["android", "tv", "web_safari", "mweb"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
         "http_headers": headers,

@@ -1477,6 +1477,15 @@ def go_live(cid: str, body: dict = Body(default={})):
 def stop_live(jid: str):
     s = live.mine(jid)
     if not s:
+        try:
+            j = jobs.mine(jid)
+            if j and j.get("status") == "live":
+                j.update(status="done", stage="Stopped by you")
+                jobs.save(j)
+                ctx.bump()
+                return {"ok": True}
+        except Exception:
+            pass
         raise HTTPException(404, "This recording has already ended")
     s.stop()
     return {"ok": True}
