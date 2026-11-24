@@ -26,7 +26,13 @@ def run():
     trending = campaigns.get_trending()
     assert len(trending) >= 5
     assert trending[0]["channel"] == "ludwig"
-    print(" - Trending streams: OK (Ludwig and others found)")
+    yt_trending = campaigns.get_trending(platform="youtube")
+    assert len(yt_trending) >= 1
+    assert all(s.get("platform") == "youtube" for s in yt_trending)
+    tw_trending = campaigns.get_trending(platform="twitch")
+    assert len(tw_trending) >= 1
+    assert all(s.get("platform") == "twitch" for s in tw_trending)
+    print(" - Trending streams: OK (Ludwig, YouTube and Twitch filtering found)")
 
     # 3. Create a test creator and enroll in campaign
     cr = creators.create({"name": "Test Kai Clipper", "channel": "https://www.twitch.tv/kaicenat"})

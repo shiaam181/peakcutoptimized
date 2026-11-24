@@ -1905,8 +1905,8 @@ def unenroll_campaign(body: dict = Body(...)):
 
 
 @app.get("/api/trending")
-def list_trending():
-    return campaigns.get_trending()
+def list_trending(platform: str = ""):
+    return campaigns.get_trending(platform)
 
 
 def main():

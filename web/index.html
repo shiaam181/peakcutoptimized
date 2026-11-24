@@ -2097,40 +2097,61 @@ function drawOverview() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const numStreamers = S.creators.length;
   const streamersText = `${numStreamers} streamer${numStreamers === 1 ? "" : "s"}`;
-  const trendStreams = S.trending || [
-    {channel:"ludwig", name:"Ludwig", title:"DAY 2 NON-LETHAL GTA VI RUN [DROPS ON] !discord", game:"Grand Theft Auto VI", viewers:4110, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/104a32ec-3d92-4299-8cfb-6f81a1795c6f-profile_image-300x300.png"},
-    {channel:"kaicenat", name:"Kai Cenat", title:"GTA 6 MARATHON DAY 1 | SPECIAL GUEST", game:"Grand Theft Auto VI", viewers:84250, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/5be023b1-2dd4-4fa9-b88e-670dc951d8d1-profile_image-300x300.png"},
-    {channel:"caseoh_", name:"CaseOh", title:"SCARIEST GAMES ON STEAM", game:"Horror Games", viewers:51200, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/8b049d53-a550-48e0-a7d1-e63d41f391a0-profile_image-300x300.png"},
-    {channel:"jynxzi", name:"Jynxzi", title:"1V1 TOURNAMENT FOR $10,000", game:"Tom Clancy's Rainbow Six Siege", viewers:43900, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/d0ef5585-cdfa-47cb-a50e-5d15ca3ff8be-profile_image-300x300.png"},
-    {channel:"xqc", name:"xQc", title:"DAILY GAMING / TIKTOK REACTS", game:"Just Chatting", viewers:36700, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/xqc-profile_image-92d06b720f04e1ab-300x300.jpeg"}
+  if (!S.trendingLoaded) {
+    S.trendingLoaded = true;
+    api("/api/trending").then(t => {
+      if (Array.isArray(t) && t.length) {
+        S.trending = t;
+        if (!S.trendPick || !t.some(x => x.channel === S.trendPick)) {
+          S.trendPick = t[0].channel;
+        }
+        drawOverview();
+      }
+    }).catch(() => {});
+  }
+  const allStreams = S.trending || [
+    {channel:"ai39lbFr410", name:"TheBurntPeanut", platform:"youtube", title:"🔴LIVE | GTA 6 | DAY 5", game:"Grand Theft Auto VI", viewers:58500, avatar:"https://yt3.ggpht.com/QZZBJTwyc5uzqJIqN-2Ppx7MtQ9mA4pBCogun2twJr-vtlXXFQg0lHu3kNnkNXQO-H-ZumFBnA=s68-c-k-c0x00ffffff-no-rj", embed:"ai39lbFr410", url:"https://www.youtube.com/watch?v=ai39lbFr410"},
+    {channel:"ludwig", name:"Ludwig", platform:"twitch", title:"DAY 2 NON-LETHAL GTA VI RUN [DROPS ON] !discord", game:"Grand Theft Auto VI", viewers:4110, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/104a32ec-3d92-4299-8cfb-6f81a1795c6f-profile_image-300x300.png", embed:"ludwig", url:"https://www.twitch.tv/ludwig"},
+    {channel:"kaicenat", name:"Kai Cenat", platform:"twitch", title:"GTA 6 MARATHON DAY 1 | SPECIAL GUEST", game:"Grand Theft Auto VI", viewers:84250, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/5be023b1-2dd4-4fa9-b88e-670dc951d8d1-profile_image-300x300.png", embed:"kaicenat", url:"https://www.twitch.tv/kaicenat"},
+    {channel:"8PM0veeBXEM", name:"Typical Gamer", platform:"youtube", title:"🔴 LIVE! - PLAYING GTA 6 RIGHT NOW!", game:"Grand Theft Auto VI", viewers:16500, avatar:"https://i.ytimg.com/vi/8PM0veeBXEM/hqdefault.jpg", embed:"8PM0veeBXEM", url:"https://www.youtube.com/watch?v=8PM0veeBXEM"},
+    {channel:"caseoh_", name:"CaseOh", platform:"twitch", title:"SCARIEST GAMES ON STEAM", game:"Horror Games", viewers:51200, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/8b049d53-a550-48e0-a7d1-e63d41f391a0-profile_image-300x300.png", embed:"caseoh_", url:"https://www.twitch.tv/caseoh_"}
   ];
-  S.trendPick = S.trendPick || trendStreams[0].channel;
-  const curTrend = trendStreams.find(s => s.channel === S.trendPick) || trendStreams[0];
+  const filterPlat = S.trendFilter || "all";
+  const trendStreams = filterPlat === "all" ? allStreams : allStreams.filter(s => (s.platform || "twitch").toLowerCase() === filterPlat);
+  const activeStreams = trendStreams.length ? trendStreams : allStreams;
+  if (!S.trendPick || !activeStreams.some(s => s.channel === S.trendPick)) {
+    S.trendPick = activeStreams[0].channel;
+  }
+  const curTrend = activeStreams.find(s => s.channel === S.trendPick) || activeStreams[0];
   const trendHtml = `<div class="ov-top-bar"><div><h1>Home</h1><p class="sub">${greeting}, ${streamersText}.</p></div>
     <div class="ov-top-actions"><button type="button" class="chip" data-act="focusadd">${ic("link")}Paste link</button><button type="button" class="chip" data-act="pickfile">${ic("up")}Upload</button></div></div>
   <div class="trending-live-card">
     <div class="trending-live-head">
       <div class="trending-title"><span class="dot-live"></span><b>Trending live now</b></div>
+      <div class="trending-filter-tabs" style="display:flex;gap:4px">
+        <button type="button" class="t-pill ${filterPlat === 'all' ? 'on' : ''}" data-act="trendfilter" data-plat="all">All</button>
+        <button type="button" class="t-pill ${filterPlat === 'youtube' ? 'on' : ''}" data-act="trendfilter" data-plat="youtube" style="${filterPlat === 'youtube' ? 'background:#FF0000;border-color:#FF0000;color:#fff' : ''}">YouTube</button>
+        <button type="button" class="t-pill ${filterPlat === 'twitch' ? 'on' : ''}" data-act="trendfilter" data-plat="twitch" style="${filterPlat === 'twitch' ? 'background:#9146FF;border-color:#9146FF;color:#fff' : ''}">Twitch</button>
+      </div>
       <div class="trending-tabs">
-        ${trendStreams.map(s => `<button type="button" class="t-pill ${S.trendPick === s.channel ? "on" : ""}" data-act="picktrend" data-ch="${esc(s.channel)}">${esc(s.name)}</button>`).join("")}
+        ${activeStreams.map(s => `<button type="button" class="t-pill ${S.trendPick === s.channel ? "on" : ""}" data-act="picktrend" data-ch="${esc(s.channel)}">${s.platform === 'youtube' ? '<span style=\"color:#FF0000;font-weight:bold;margin-right:4px\">▶</span>' : '<span style=\"color:#9146FF;font-weight:bold;margin-right:4px\">✦</span>'}${esc(s.name)}</button>`).join("")}
       </div>
     </div>
     <div class="trending-player-wrap">
-      <iframe src="${playerSrc("twitch", curTrend.channel)}" allowfullscreen="true" scrolling="no"></iframe>
+      <iframe src="${playerSrc(curTrend.platform || "twitch", curTrend.embed || curTrend.channel)}" allowfullscreen="true" scrolling="no"></iframe>
     </div>
     <div class="trending-info-bar">
       <div class="t-streamer-meta">
         <img class="t-avatar" src="${curTrend.avatar}" alt="${esc(curTrend.name)}" onerror="this.src='/brand/favicon.svg'">
         <div>
-          <div class="t-name"><b>${esc(curTrend.name)}</b> <span class="verified">✓</span></div>
+          <div class="t-name"><b>${esc(curTrend.name)}</b> <span class="verified">✓</span> <span class="pill ${curTrend.platform === 'youtube' ? 'bad' : 'brand'}" style="font-size:11px;padding:1px 6px;margin-left:6px">${curTrend.platform === 'youtube' ? 'YouTube Live' : 'Twitch'}</span></div>
           <div class="t-title">${esc(curTrend.title)}</div>
-          <div class="t-sub">${esc(curTrend.game)} · <span class="t-viewers">${(curTrend.viewers).toLocaleString()} viewers</span></div>
+          <div class="t-sub">${esc(curTrend.game)} · <span class="t-viewers">${(curTrend.viewers || 0).toLocaleString()} viewers</span></div>
         </div>
       </div>
       <div class="t-actions">
-        <button type="button" class="btn-follow" data-act="trendfollow" data-ch="${esc(curTrend.channel)}">${ic("heart")}Follow</button>
-        <button type="button" class="btn-gift" data-act="trendgift">${ic("gift")}Gift a Sub</button>
-        <button type="button" class="btn primary" data-act="clipstream" data-ch="${esc(curTrend.channel)}" data-name="${esc(curTrend.name)}">${ic("scissors")}Clip this stream</button>
+        ${curTrend.platform === 'youtube' ? `<a href="${esc(curTrend.channel_url || curTrend.url || '#')}" target="_blank" rel="noopener" class="btn-gift" style="text-decoration:none">${ic("link")}Open Channel</a>` : `<button type="button" class="btn-follow" data-act="trendfollow" data-ch="${esc(curTrend.channel)}">${ic("heart")}Follow</button><button type="button" class="btn-gift" data-act="trendgift">${ic("gift")}Gift a Sub</button>`}
+        <button type="button" class="btn primary" data-act="clipstream" data-ch="${esc(curTrend.channel)}" data-name="${esc(curTrend.name)}" data-plat="${esc(curTrend.platform || 'twitch')}" data-url="${esc(curTrend.url || '')}">${ic("scissors")}Clip this stream</button>
       </div>
     </div>
   </div>`;
@@ -2648,6 +2669,10 @@ document.addEventListener("click", async e => {
       S.trendPick = d.ch;
       return drawOverview();
     }
+    if (a === "trendfilter") {
+      S.trendFilter = d.plat || "all";
+      return drawOverview();
+    }
     if (a === "trendfollow") {
       window.open(`https://www.twitch.tv/${encodeURIComponent(d.ch)}`, "_blank");
       return;
@@ -2657,10 +2682,12 @@ document.addEventListener("click", async e => {
       return;
     }
     if (a === "clipstream") {
+      const isYt = d.plat === "youtube";
+      const targetUrl = d.url || (isYt ? `https://www.youtube.com/watch?v=${d.ch}` : `https://www.twitch.tv/${d.ch}`);
       let cr = S.creators.find(c => (c.channel || "").toLowerCase().includes(d.ch.toLowerCase()) || c.name.toLowerCase() === d.name.toLowerCase());
       if (!cr) {
         try {
-          cr = await send("/api/creators", {name: d.name, channel: `https://www.twitch.tv/${d.ch}`});
+          cr = await send("/api/creators", {name: d.name, channel: targetUrl});
           await tick();
         } catch (e) {
           return toast(e.message, "bad");
@@ -2668,7 +2695,7 @@ document.addEventListener("click", async e => {
       }
       go("c:" + cr.id, "clips");
       try {
-        const j = await send(`/api/creators/${cr.id}/live`, {channel: `https://www.twitch.tv/${d.ch}`});
+        const j = await send(`/api/creators/${cr.id}/live`, {channel: targetUrl});
         if (j?.id) { cr.live_job = j.id; S.jobs.unshift(j); render(); }
         toast(`Recording started for ${d.name}. Clips will appear as highlights happen!`, "ok");
       } catch (err) {
