@@ -1692,6 +1692,32 @@ def post_cookies(request: Request, body: dict = Body(default={})):
     return {"ok": True, "has_cookies": True}
 
 
+@app.get("/api/test-stream")
+def test_stream_diag(url: str = ""):
+    if not url:
+        url = "https://www.youtube.com/watch?v=kEgS7FQqfRM"
+    import time
+    t0 = time.time()
+    try:
+        res = live.resolve(url)
+        return {
+            "ok": True,
+            "duration": round(time.time() - t0, 2),
+            "title": res.get("title"),
+            "uploader": res.get("uploader"),
+            "urls_count": len(res.get("urls", [])),
+            "sample_url": (res["urls"][0][:120] + "...") if res.get("urls") else None,
+            "has_cookies": bool(media.cookie_opts()),
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "duration": round(time.time() - t0, 2),
+            "error": str(e),
+            "has_cookies": bool(media.cookie_opts()),
+        }
+
+
 # ---------------------------------------------------------------- connecting YouTube, Instagram and TikTok
 # Connect sends the browser to the platform's own sign-in page; the platform sends it back here, and the person lands
 # on Settings, Connected apps, with the account added (or a message saying what went wrong).
