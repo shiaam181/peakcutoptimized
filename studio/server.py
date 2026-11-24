@@ -17,6 +17,19 @@ from urllib.parse import quote, urlparse
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+import ssl
+try:
+    if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_create_default_context = ssl.create_default_context
+        def _patched_create_default_context(*args, **kwargs):
+            ctx_ssl = _orig_create_default_context(*args, **kwargs)
+            ctx_ssl.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            return ctx_ssl
+        ssl.create_default_context = _patched_create_default_context
+        ssl._create_default_https_context = _patched_create_default_context
+except Exception:
+    pass
+
 import sqlalchemy as sa
 import uvicorn
 from fastapi import Body, FastAPI, File, Form, HTTPException, Request, UploadFile

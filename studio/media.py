@@ -8,6 +8,19 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+import ssl
+
+try:
+    if hasattr(ssl, "OP_IGNORE_UNEXPECTED_EOF"):
+        _orig_ssl_ctx = ssl.create_default_context
+        def _patched_ssl_ctx(*args, **kwargs):
+            c = _orig_ssl_ctx(*args, **kwargs)
+            c.options |= ssl.OP_IGNORE_UNEXPECTED_EOF
+            return c
+        ssl.create_default_context = _patched_ssl_ctx
+        ssl._create_default_https_context = _patched_ssl_ctx
+except Exception:
+    pass
 
 from . import config
 
