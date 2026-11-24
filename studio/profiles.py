@@ -234,14 +234,15 @@ def live_now(platform: str, url: str) -> dict:
             vid = m_vid.group(1) if m_vid else ""
         if not vid:
             return off
-        out = {"live": True, "viewers": None, "title": _meta(html, "og:title"), "started": None, "embed": vid}
-        try:
-            i = _ydl_info(f"https://www.youtube.com/watch?v={vid}")
-            out.update(viewers=i.get("concurrent_view_count"), title=_no_date(i.get("title")) or out["title"],
-                       started=i.get("release_timestamp") or i.get("timestamp"), embed=i.get("id") or vid)
-        except Exception:
-            pass
-        return out
+        m_viewers = re.search(r'"viewCountText":\{[^}]*"text":"([^"]+)"', html) or re.search(r'([\d,]+)\s+watching', html)
+        viewers = None
+        if m_viewers:
+            try:
+                viewers = int(m_viewers.group(1).replace(",", "").strip())
+            except Exception:
+                pass
+        return {"live": True, "viewers": viewers, "title": _meta(html, "og:title") or "Live Stream",
+                "started": None, "embed": vid}
     if platform == "Twitch":
         login = (path[0] if path else "").lower()
         if re.fullmatch(r"\w{2,40}", login):

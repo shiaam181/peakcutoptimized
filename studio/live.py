@@ -89,7 +89,7 @@ def resolve(url: str) -> dict:
         "nocheckcertificate": True,
         "prefer_insecure": True,
         "legacyserverconnect": True,
-        "socket_timeout": 30,
+        "socket_timeout": 15,
         "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -255,6 +255,7 @@ class Session:
         m = re.match(r"^https?://(?:www\.)?twitch\.tv/([A-Za-z0-9_]+)", self.job["source"]["url"])
         if m:
             threading.Thread(target=ctx.bind(self._chat), args=(m.group(1).lower(),), daemon=True).start()
+        ctx.bump()
 
     def stop(self, note="Stopped by you"):
         """Instant for the user: the card and the creator show as stopped straight away. Clips already being made
