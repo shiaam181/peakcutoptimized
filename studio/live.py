@@ -99,6 +99,10 @@ def resolve(url: str) -> dict:
             embed_id = info_live.get("embed")
             if info_live.get("live") and embed_id:
                 url = f"https://www.youtube.com/watch?v={embed_id}"
+            elif not info_live.get("live"):
+                raise NotLive("This channel is not live right now.")
+        except NotLive:
+            raise
         except Exception:
             pass
     import yt_dlp
@@ -114,7 +118,7 @@ def resolve(url: str) -> dict:
         "source_address": "0.0.0.0",
         "socket_timeout": 15,
         "extractor_args": {
-            "youtube": {"player_client": ["web", "mweb", "android", "ios"], "skip": ["authcheck"]},
+            "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
         "http_headers": {
@@ -130,9 +134,18 @@ def resolve(url: str) -> dict:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as e:  # noqa: BLE001
+        err_msg = str(e).strip()
+        err_clean = re.sub(r"^ERROR:\s*(\[[^\]]+\]\s*)?", "", err_msg).strip()
+        err_lower = err_clean.lower()
+        if any(x in err_lower for x in ("not currently live", "not live right now")):
+            raise NotLive("This channel is not live right now.") from e
+        if "this live event has ended" in err_lower:
+            raise NotLive("This live event has ended.") from e
+        if any(x in err_lower for x in ("confirm you're not a bot", "not a bot", "exporting-youtube-cookies")):
+            raise NotLive("YouTube is requiring fresh cookies or sign-in for this stream. Update cookies in Settings → Connected apps.") from e
         if media.note_refusal(url, e):
             raise NotLive(media.YT_BLOCKED) from e
-        raise NotLive(str(e)[-200:]) from e
+        raise NotLive(err_clean[:180]) from e
     if not info or not info.get("is_live"):
         raise NotLive("This channel is not live right now.")
     fmts = info.get("requested_formats") or [info]

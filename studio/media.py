@@ -126,14 +126,25 @@ def format_netscape_cookies(raw: str) -> str:
     if "\\n" in raw and "\n" not in raw:
         raw = raw.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
 
+    # If base64 encoded:
+    if len(raw) > 30 and " " not in raw and "\t" not in raw and "\n" not in raw and not raw.startswith("#"):
+        try:
+            import base64
+            decoded = base64.b64decode(raw).decode("utf-8", "ignore")
+            if "\t" in decoded or "{" in decoded or "=" in decoded:
+                return format_netscape_cookies(decoded)
+        except Exception:
+            pass
+
     # If JSON array from browser extension:
     if raw.startswith("[") and raw.endswith("]"):
         try:
             items = json.loads(raw)
             lines = ["# Netscape HTTP Cookie File"]
             for c in items:
-                domain = str(c.get("domain") or ".youtube.com")
-                include_sub = "TRUE" if domain.startswith(".") else "FALSE"
+                domain = str(c.get("domain") or ".youtube.com").strip()
+                if not domain.startswith("."):
+                    domain = "." + domain
                 path = str(c.get("path") or "/")
                 secure = "TRUE" if c.get("secure", False) else "FALSE"
                 try:
@@ -143,7 +154,7 @@ def format_netscape_cookies(raw: str) -> str:
                 name = str(c.get("name") or "").strip()
                 val = str(c.get("value") or "").strip()
                 if name:
-                    lines.append(f"{domain}\t{include_sub}\t{path}\t{secure}\t{expiry}\t{name}\t{val}")
+                    lines.append(f"{domain}\tTRUE\t{path}\t{secure}\t{expiry}\t{name}\t{val}")
             if len(lines) > 1:
                 return "\n".join(lines)
         except Exception:
@@ -161,7 +172,30 @@ def format_netscape_cookies(raw: str) -> str:
         if len(lines) > 1:
             return "\n".join(lines)
 
-    return raw
+    # Standard Netscape lines: ensure initial dot and TRUE consistency
+    lines = ["# Netscape HTTP Cookie File"]
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 7:
+            domain = parts[0].strip()
+            if not domain.startswith(".") and not domain.startswith("www."):
+                domain = "." + domain
+            path = parts[2].strip() or "/"
+            secure = parts[3].strip() or "FALSE"
+            expiry = parts[4].strip() or "2147483647"
+            name = parts[5].strip()
+            val = parts[6].strip()
+            lines.append(f"{domain}\tTRUE\t{path}\t{secure}\t{expiry}\t{name}\t{val}")
+        elif len(parts) == 1 and "=" in parts[0]:
+            k, v = parts[0].split("=", 1)
+            lines.append(f".youtube.com\tTRUE\t/\tTRUE\t2147483647\t{k.strip()}\t{v.strip()}")
+        else:
+            lines.append(line)
+
+    return "\n".join(lines)
 
 
 def cookie_opts() -> dict:
@@ -175,6 +209,11 @@ def cookie_opts() -> dict:
         or config.env("YT_COOKIES_TEXT")
         or config.env("YT_COOKIES")
         or config.env("YOUTUBE_COOKIES")
+        or config.env("YOUTUBE_COOKIE")
+        or config.env("YT_COOKIE")
+        or config.env("COOKIES_TEXT")
+        or config.env("COOKIES")
+        or config.env("COOKIE")
         or ""
     ).strip()
 
@@ -194,6 +233,12 @@ def cookie_opts() -> dict:
 
     # 2. Check if a pre-existing non-empty cookie file exists in data directory or config.YT_COOKIES:
     if f.is_file() and f.stat().st_size > 10:
+        try:
+            content = f.read_text(encoding="utf-8", errors="ignore")
+            if not content.startswith("# Netscape HTTP Cookie File"):
+                f.write_text(format_netscape_cookies(content), encoding="utf-8")
+        except Exception:
+            pass
         return {"cookiefile": str(f)}
     try:
         if config.YT_COOKIES.is_file() and config.YT_COOKIES.stat().st_size > 10:
@@ -228,7 +273,7 @@ def _ydl(opts):
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "extractor_args": {
-            "youtube": {"player_client": ["web", "mweb", "android", "ios"], "skip": ["authcheck"]},
+            "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
         "http_headers": {
