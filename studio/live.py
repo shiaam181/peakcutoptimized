@@ -113,12 +113,16 @@ def resolve(url: str) -> dict:
         "legacyserverconnect": True,
         "source_address": "0.0.0.0",
         "socket_timeout": 15,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios"]}},
+        "extractor_args": {
+            "youtube": {"player_client": ["android", "ios"], "skip": ["authcheck"]},
+            "youtubetab": {"skip": ["authcheck"]},
+        },
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
         },
         "js_runtimes": {"deno": {}, "node": {}},
+        **media.impersonate_opts(),
         **media.cookie_opts(),
         **media.proxy_opts(),
     }
@@ -314,7 +318,9 @@ class Session:
                 info = resolve(url)
             except NotLive as e:
                 fails += 1
-                if "not live right now" in str(e).lower() or fails >= 4:
+                err_lower = str(e).lower()
+                is_terminal = any(term in err_lower for term in ("not live right now", "has ended", "is offline", "private video", "upcoming", "premieres"))
+                if is_terminal or fails >= 4:
                     if self.samples == 0:
                         self.job["error"] = f"Could not start recording: {e}"
                     break
@@ -335,10 +341,11 @@ class Session:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
             ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            cookie_hdr = "Cookie: SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+\r\n"
             cmd = [
                 "ffmpeg", "-v", "error",
                 "-user_agent", ua,
-                "-headers", f"User-Agent: {ua}\r\nReferer: https://www.youtube.com/\r\nOrigin: https://www.youtube.com\r\n",
+                "-headers", f"User-Agent: {ua}\r\nReferer: https://www.youtube.com/\r\nOrigin: https://www.youtube.com\r\n{cookie_hdr}",
                 "-rw_timeout", "15000000",
             ]
             if config.PROXY:

@@ -343,32 +343,32 @@ TRENDING_STREAMS: list[dict] = [
         "channel_url": "https://www.twitch.tv/xqc",
     },
     {
-        "channel": "ai39lbFr410",
-        "name": "TheBurntPeanut",
+        "channel": "bTE_5AuAAgk",
+        "name": "Snax Gaming",
         "platform": "youtube",
-        "avatar": "https://yt3.ggpht.com/QZZBJTwyc5uzqJIqN-2Ppx7MtQ9mA4pBCogun2twJr-vtlXXFQg0lHu3kNnkNXQO-H-ZumFBnA=s68-c-k-c0x00ffffff-no-rj",
-        "title": "🔴LIVE | GTA 6 | DAY 5",
+        "avatar": "https://i.ytimg.com/vi/bTE_5AuAAgk/hqdefault.jpg",
+        "title": "GTA 6 FINAL DAY :THE VICE CITY TAKEOVER",
         "game": "Grand Theft Auto VI",
-        "viewers": 58500,
+        "viewers": 9700,
         "live": True,
         "verified": True,
-        "embed": "ai39lbFr410",
-        "url": "https://www.youtube.com/watch?v=ai39lbFr410",
-        "channel_url": "https://www.youtube.com/@TheBurntPeanut",
+        "embed": "bTE_5AuAAgk",
+        "url": "https://www.youtube.com/watch?v=bTE_5AuAAgk",
+        "channel_url": "https://www.youtube.com/@snaxgaming",
     },
     {
-        "channel": "8PM0veeBXEM",
-        "name": "Typical Gamer",
+        "channel": "_7LJB5SAgrY",
+        "name": "PGL",
         "platform": "youtube",
-        "avatar": "https://i.ytimg.com/vi/8PM0veeBXEM/hqdefault.jpg",
-        "title": "🔴 LIVE! - PLAYING GTA 6 RIGHT NOW!",
-        "game": "Grand Theft Auto VI",
-        "viewers": 16500,
+        "avatar": "https://i.ytimg.com/vi/_7LJB5SAgrY/hqdefault.jpg",
+        "title": "🔴 LIVE | Counter-Strike 2 Major",
+        "game": "Counter-Strike 2",
+        "viewers": 21800,
         "live": True,
         "verified": True,
-        "embed": "8PM0veeBXEM",
-        "url": "https://www.youtube.com/watch?v=8PM0veeBXEM",
-        "channel_url": "https://www.youtube.com/@typicalgamer",
+        "embed": "_7LJB5SAgrY",
+        "url": "https://www.youtube.com/watch?v=_7LJB5SAgrY",
+        "channel_url": "https://www.youtube.com/@PGL",
     },
 ]
 
@@ -504,9 +504,26 @@ def fetch_popular_youtube(limit: int = 15) -> list[dict]:
     urls = ["https://www.youtube.com/gaming/live", "https://www.youtube.com/live"]
     for u in urls:
         try:
-            req = urllib.request.Request(u, headers=headers)
-            with urllib.request.urlopen(req, timeout=6) as resp:
-                html = resp.read().decode("utf-8", "ignore")
+            html = ""
+            try:
+                from curl_cffi import requests as c_requests
+                r = c_requests.get(u, headers=headers, impersonate="chrome", timeout=8)
+                if r.status_code == 200:
+                    html = r.text
+            except Exception:
+                pass
+            if not html:
+                try:
+                    import httpx
+                    r = httpx.get(u, headers=headers, timeout=8, follow_redirects=True)
+                    if r.status_code == 200:
+                        html = r.text
+                except Exception:
+                    pass
+            if not html:
+                req = urllib.request.Request(u, headers=headers)
+                with urllib.request.urlopen(req, timeout=6) as resp:
+                    html = resp.read().decode("utf-8", "ignore")
             m = re.search(r"var ytInitialData\s*=\s*({.+?});</script>", html)
             if not m:
                 continue

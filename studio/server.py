@@ -1462,8 +1462,11 @@ def go_live(cid: str, body: dict = Body(default={})):
         raise HTTPException(404, "No such creator")
     # the stream the user is watching, else where they are live right now, else the channel chosen in Setup
     on_air = [p["channel"] for k, p in (c.get("profiles") or {}).items() if p.get("live") and c["channels"].get(k) == p.get("channel")]
-    asked = str((body or {}).get("channel") or "")
-    url = asked if asked in c["channels"].values() else c["channel"] if c["channel"] in on_air or not on_air else on_air[0]
+    asked = str((body or {}).get("channel") or "").strip()
+    if asked and (asked in c["channels"].values() or media.site_allowed(asked)):
+        url = asked
+    else:
+        url = c["channel"] if c["channel"] in on_air or not on_air else on_air[0]
     try:
         return jobs.public(live.start_session(c, url))
     except ValueError as e:

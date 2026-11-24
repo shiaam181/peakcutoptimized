@@ -36,7 +36,20 @@ _lock = threading.Lock()
 
 
 def _get(url: str, accept: str = "text/html", limit: int = 3_000_000):
-    req = urllib.request.Request(url, headers={**UA, "Accept": accept})
+    headers = {**UA, "Accept": accept}
+    try:
+        from curl_cffi import requests as c_requests
+        r = c_requests.get(url, headers=headers, impersonate="chrome", timeout=10)
+        return r.headers.get("Content-Type") or "", r.content[:limit]
+    except Exception:
+        pass
+    try:
+        import httpx
+        r = httpx.get(url, headers=headers, timeout=10, follow_redirects=True)
+        return r.headers.get("Content-Type") or "", r.content[:limit]
+    except Exception:
+        pass
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=10) as r:
         return r.headers.get("Content-Type") or "", r.read(limit)
 
@@ -191,11 +204,12 @@ def _twitch_profile(url: str):
 
 def _ydl_info(url: str) -> dict:
     """Live details from yt-dlp without downloading anything (no formats are fetched)."""
-    import yt_dlp
-    from .live import _Quiet
-    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True, "noplaylist": True,
-                           "logger": _Quiet(), "socket_timeout": 10}) as y:
-        return y.extract_info(url, download=False) or {}
+    from . import media
+    try:
+        with media._ydl({"skip_download": True, "socket_timeout": 10}) as y:
+            return y.extract_info(url, download=False) or {}
+    except Exception:
+        return {}
 
 
 def _no_date(title: str) -> str:

@@ -163,6 +163,14 @@ def proxy_opts() -> dict:
     return {"proxy": p} if p else {}
 
 
+def impersonate_opts() -> dict:
+    try:
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+        return {"impersonate": ImpersonateTarget.from_str("chrome")}
+    except Exception:
+        return {}
+
+
 def _ydl(opts):
     import yt_dlp
     # a channel or playlist link is answered as "a list" straight away, never walked video by video
@@ -174,12 +182,16 @@ def _ydl(opts):
         "nocheckcertificate": True,
         "prefer_insecure": True,
         "legacyserverconnect": True,
-        "extractor_args": {"youtube": {"player_client": ["android", "ios", "mweb"]}},
+        "extractor_args": {
+            "youtube": {"player_client": ["android", "ios", "mweb"], "skip": ["authcheck"]},
+            "youtubetab": {"skip": ["authcheck"]},
+        },
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
         },
         "concurrent_fragment_downloads": 4, "js_runtimes": {"deno": {}, "node": {}},
+        **impersonate_opts(),
         **cookie_opts(), **proxy_opts(), **opts
     })
 
@@ -207,25 +219,44 @@ def info(url: str) -> dict:
     except Exception as e:
         if is_youtube(url):
             try:
-                import urllib.request, json, urllib.parse
+                import urllib.parse, json
                 clean_url = url.split("?")[0] if "youtu.be/" in url else url
                 encoded = urllib.parse.quote(clean_url, safe="")
+                oembed_url = f"https://www.youtube.com/oembed?url={encoded}&format=json"
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
                 }
-                req = urllib.request.Request(f"https://www.youtube.com/oembed?url={encoded}&format=json",
-                                             headers=headers)
-                with urllib.request.urlopen(req, timeout=6) as r:
-                    data = json.loads(r.read())
-                return {
-                    "title": data.get("title") or "YouTube Video",
-                    "uploader": data.get("author_name") or "YouTube Creator",
-                    "duration": 600.0,
-                    "is_live": False,
-                    "thumbnail": data.get("thumbnail_url") or "",
-                    "kind": "video",
-                }
+                data = None
+                try:
+                    from curl_cffi import requests as c_requests
+                    r = c_requests.get(oembed_url, headers=headers, impersonate="chrome", timeout=6)
+                    if r.status_code == 200:
+                        data = r.json()
+                except Exception:
+                    pass
+                if not data:
+                    try:
+                        import httpx
+                        r = httpx.get(oembed_url, headers=headers, timeout=6)
+                        if r.status_code == 200:
+                            data = r.json()
+                    except Exception:
+                        pass
+                if not data:
+                    import urllib.request
+                    req = urllib.request.Request(oembed_url, headers=headers)
+                    with urllib.request.urlopen(req, timeout=6) as r:
+                        data = json.loads(r.read())
+                if data:
+                    return {
+                        "title": data.get("title") or "YouTube Video",
+                        "uploader": data.get("author_name") or "YouTube Creator",
+                        "duration": 600.0,
+                        "is_live": False,
+                        "thumbnail": data.get("thumbnail_url") or "",
+                        "kind": "video",
+                    }
             except Exception:
                 pass
         raise

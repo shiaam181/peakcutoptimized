@@ -2110,10 +2110,10 @@ function drawOverview() {
     }).catch(() => {});
   }
   const allStreams = S.trending || [
-    {channel:"ai39lbFr410", name:"TheBurntPeanut", platform:"youtube", title:"🔴LIVE | GTA 6 | DAY 5", game:"Grand Theft Auto VI", viewers:58500, avatar:"https://yt3.ggpht.com/QZZBJTwyc5uzqJIqN-2Ppx7MtQ9mA4pBCogun2twJr-vtlXXFQg0lHu3kNnkNXQO-H-ZumFBnA=s68-c-k-c0x00ffffff-no-rj", embed:"ai39lbFr410", url:"https://www.youtube.com/watch?v=ai39lbFr410"},
+    {channel:"bTE_5AuAAgk", name:"Snax Gaming", platform:"youtube", title:"GTA 6 FINAL DAY :THE VICE CITY TAKEOVER", game:"Grand Theft Auto VI", viewers:9700, avatar:"https://i.ytimg.com/vi/bTE_5AuAAgk/hqdefault.jpg", embed:"bTE_5AuAAgk", url:"https://www.youtube.com/watch?v=bTE_5AuAAgk"},
     {channel:"ludwig", name:"Ludwig", platform:"twitch", title:"DAY 2 NON-LETHAL GTA VI RUN [DROPS ON] !discord", game:"Grand Theft Auto VI", viewers:4110, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/104a32ec-3d92-4299-8cfb-6f81a1795c6f-profile_image-300x300.png", embed:"ludwig", url:"https://www.twitch.tv/ludwig"},
     {channel:"kaicenat", name:"Kai Cenat", platform:"twitch", title:"GTA 6 MARATHON DAY 1 | SPECIAL GUEST", game:"Grand Theft Auto VI", viewers:84250, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/5be023b1-2dd4-4fa9-b88e-670dc951d8d1-profile_image-300x300.png", embed:"kaicenat", url:"https://www.twitch.tv/kaicenat"},
-    {channel:"8PM0veeBXEM", name:"Typical Gamer", platform:"youtube", title:"🔴 LIVE! - PLAYING GTA 6 RIGHT NOW!", game:"Grand Theft Auto VI", viewers:16500, avatar:"https://i.ytimg.com/vi/8PM0veeBXEM/hqdefault.jpg", embed:"8PM0veeBXEM", url:"https://www.youtube.com/watch?v=8PM0veeBXEM"},
+    {channel:"_7LJB5SAgrY", name:"PGL", platform:"youtube", title:"🔴 LIVE | Counter-Strike 2 Major", game:"Counter-Strike 2", viewers:21800, avatar:"https://i.ytimg.com/vi/_7LJB5SAgrY/hqdefault.jpg", embed:"_7LJB5SAgrY", url:"https://www.youtube.com/watch?v=_7LJB5SAgrY"},
     {channel:"caseoh_", name:"CaseOh", platform:"twitch", title:"SCARIEST GAMES ON STEAM", game:"Horror Games", viewers:51200, avatar:"https://static-cdn.jtvnw.net/jtv_user_pictures/8b049d53-a550-48e0-a7d1-e63d41f391a0-profile_image-300x300.png", embed:"caseoh_", url:"https://www.twitch.tv/caseoh_"}
   ];
   const filterPlat = S.trendFilter || "all";
@@ -2747,6 +2747,9 @@ document.addEventListener("click", async e => {
         } catch (e) {
           return toast(e.message, "bad");
         }
+      } else if (targetUrl && cr.channel !== targetUrl) {
+        send(`/api/creators/${cr.id}`, {channel: targetUrl}).catch(() => {});
+        cr.channel = targetUrl;
       }
       go("c:" + cr.id, "clips");
       try {
