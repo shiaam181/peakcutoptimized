@@ -804,6 +804,7 @@ class Session:
                       "auto": None,
                       "pending_clips": len(self.manual)})
         jobs.save(self.job)
+        ctx.bump()
 
     def _analyze(self):
         cid = self.job["creator"]
