@@ -248,6 +248,27 @@ def cookie_opts() -> dict:
     return {}
 
 
+def cookie_header() -> str:
+    """Return a Cookie HTTP header string from configured cookies or fallback consent cookie."""
+    cfile = cookie_opts().get("cookiefile")
+    if cfile and Path(cfile).is_file():
+        try:
+            content = Path(cfile).read_text(encoding="utf-8", errors="ignore")
+            pairs = []
+            for line in content.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split("\t")
+                if len(parts) >= 7:
+                    pairs.append(f"{parts[5]}={parts[6]}")
+            if pairs:
+                return "; ".join(pairs)
+        except Exception:
+            pass
+    return "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+"
+
+
 def proxy_opts() -> dict:
     p = (config.PROXY or "").strip()
     return {"proxy": p} if p else {}
@@ -263,6 +284,11 @@ def impersonate_opts() -> dict:
 
 def _ydl(opts):
     import yt_dlp
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
+    if not cookie_opts().get("cookiefile"):
+        headers["Cookie"] = "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+"
     # a channel or playlist link is answered as "a list" straight away, never walked video by video
     return yt_dlp.YoutubeDL({
         "noplaylist": True, "quiet": True, "no_warnings": True, "logger": _Quiet(),
@@ -276,10 +302,7 @@ def _ydl(opts):
             "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
-        },
+        "http_headers": headers,
         "concurrent_fragment_downloads": 4, "js_runtimes": {"deno": {}, "node": {}},
         **impersonate_opts(),
         **cookie_opts(), **proxy_opts(), **opts

@@ -36,7 +36,8 @@ _lock = threading.Lock()
 
 
 def _get(url: str, accept: str = "text/html", limit: int = 3_000_000):
-    headers = {**UA, "Accept": accept}
+    from . import media
+    headers = {**UA, "Accept": accept, "Cookie": media.cookie_header()}
     try:
         from curl_cffi import requests as c_requests
         r = c_requests.get(url, headers=headers, impersonate="chrome", timeout=10)

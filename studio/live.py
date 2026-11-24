@@ -99,13 +99,16 @@ def resolve(url: str) -> dict:
             embed_id = info_live.get("embed")
             if info_live.get("live") and embed_id:
                 url = f"https://www.youtube.com/watch?v={embed_id}"
-            elif not info_live.get("live"):
-                raise NotLive("This channel is not live right now.")
-        except NotLive:
-            raise
+            else:
+                url = base + "/live"
         except Exception:
             pass
     import yt_dlp
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
+    if not media.cookie_opts().get("cookiefile"):
+        headers["Cookie"] = "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+"
     opts = {
         "quiet": True,
         "no_warnings": True,
@@ -116,15 +119,12 @@ def resolve(url: str) -> dict:
         "prefer_insecure": True,
         "legacyserverconnect": True,
         "source_address": "0.0.0.0",
-        "socket_timeout": 15,
+        "socket_timeout": 20,
         "extractor_args": {
             "youtube": {"player_client": ["web_safari", "web", "mweb", "android", "ios"], "skip": ["authcheck"]},
             "youtubetab": {"skip": ["authcheck"]},
         },
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Cookie": "SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+",
-        },
+        "http_headers": headers,
         "js_runtimes": {"deno": {}, "node": {}},
         **media.impersonate_opts(),
         **media.cookie_opts(),
@@ -344,7 +344,7 @@ class Session:
             if self.stop_flag.is_set():     # stop() came while the stream address was being looked up
                 break
             if not self.job.get("uploader"):
-                self.job.update(title=info["title"], uploader=info["uploader"], stage="Starting stream ingest...")
+                self.job.update(title=info["title"], uploader=info["uploader"], stage="Buffering live stream...")
                 jobs.save(self.job)
                 ctx.bump()
             self.part += 1
@@ -352,7 +352,7 @@ class Session:
                 self.seg_clock = max(self.seg_clock, self.samples / SR)
             p = f"p{self.part:02d}"
             ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            cookie_hdr = "Cookie: SOCS=CAESEwgDEgk2OTc3OTM3MjAaAmVuIAEaBgiA_LyaBg; CONSENT=YES+\r\n"
+            cookie_hdr = f"Cookie: {media.cookie_header()}\r\n"
             cmd = [
                 "ffmpeg", "-v", "error",
                 "-user_agent", ua,
@@ -392,6 +392,10 @@ class Session:
                     if not data:
                         break
                     data = data[: len(data) // 2 * 2]
+                    if got == 0 and len(data) > 0:
+                        self.job.update(stage="Recording")
+                        jobs.save(self.job)
+                        ctx.bump()
                     got += len(data)
                     x = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
                     level = float(20 * np.log10(np.sqrt((x ** 2).mean() + 1e-10))) if len(x) else -100.0

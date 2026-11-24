@@ -14,5 +14,3 @@ opencv-python-headless>=4.8.0
 cryptography>=41.0.0
 certifi>=2024.0.0
 curl-cffi>=0.7.0
-yt-dlp-get-pot>=0.3.0
-bgutil-ytdlp-pot-provider>=2.0.0
