@@ -2347,6 +2347,7 @@ async function drawSettings() {
       const tt = '<svg viewBox="0 0 24 24"><path fill="#fff" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.3 0 .59.04.86.13v-3.5a6.37 6.37 0 0 0-.86-.05A6.34 6.34 0 0 0 3.15 15.7a6.34 6.34 0 0 0 10.86 4.43 6.3 6.3 0 0 0 1.81-4.43V8.73a8.2 8.2 0 0 0 4.77 1.52V6.8a4.85 4.85 0 0 1-1-.11z"/></svg>';
       const ok = S.status.connect || {}, admin = me.is_admin;
       const setup = admin ? await api("/api/apps").catch(() => null) : null;
+      const ck = await api("/api/cookies").catch(() => ({has_cookies: false}));
       const GUIDE = {
         youtube: ["https://console.cloud.google.com/apis/credentials", "Google Cloud",
           ["Create a project and turn on <b>YouTube Data API v3</b>.", "Create an <b>OAuth client ID</b> of type <b>Web application</b>.",
@@ -2378,6 +2379,32 @@ async function drawSettings() {
           <div class="apptx"><b>${name}</b><span>${desc}</span>${listOf(accs)}</div><div class="appact">${act}</div>${panel}</div>`;
       };
       body.innerHTML = `<section class="set-sec"><h2>Connected apps</h2><p class="help">Connect the accounts ShineCut posts clips to. Then pick which accounts each creator posts to, in that creator's Setup.</p>
+        <div style="background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:#ef4444;color:#fff;font-weight:700;font-size:20px">▶</span>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <b style="font-size:16px">YouTube Stream & Bot Bypass (Cookies)</b>
+                  ${ck.has_cookies ? `<span class="pill ok" style="font-size:11px">Connected · Server-Wide</span>` : `<span class="pill" style="font-size:11px">Not Connected</span>`}
+                </div>
+                <p class="sub" style="margin:4px 0 0 0;font-size:13px;line-height:1.4">
+                  Once connected, <b>all users and all devices (including phones)</b> automatically download YouTube videos and record live streams without bot-checks or proxies.
+                </p>
+              </div>
+            </div>
+            <button class="btn sm ${ck.has_cookies ? "ghost" : "primary"}" data-act="toggle_ck">${ck.has_cookies ? "Update Cookies" : "Paste Cookies"}</button>
+          </div>
+          <div id="ck_box" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+            <p class="sub" style="margin-bottom:8px;font-size:13px">Export cookies from your browser (via the free "Get cookies.txt locally" extension) and paste them below:</p>
+            <textarea id="ck_text" placeholder="Paste your exported YouTube cookies.txt content here (# Netscape HTTP Cookie File...)" style="width:100%;height:130px;font-family:monospace;font-size:12px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg)"></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn primary sm" data-act="save_ck">${ic("check")}Save Cookies</button>
+              ${ck.has_cookies ? `<button class="btn ghost sm" data-act="del_ck">Remove Cookies</button>` : ""}
+              <button class="btn ghost sm" data-act="toggle_ck">Cancel</button>
+            </div>
+          </div>
+        </div>
         <div style="background:var(--card);border:1.5px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:24px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
             <div style="display:flex;align-items:center;gap:14px">
@@ -2957,6 +2984,39 @@ document.addEventListener("click", async e => {
         return drawSettings();
       } catch (err) {
         toast(err.message || "Failed to connect Zernio key.", "bad");
+      } finally {
+        b.disabled = false;
+      }
+      return;
+    }
+    if (a === "toggle_ck") {
+      const box = $("#ck_box");
+      if (box) box.style.display = box.style.display === "none" ? "block" : "none";
+      return;
+    }
+    if (a === "save_ck") {
+      const val = ($("#ck_text")?.value || "").trim();
+      if (!val) return toast("Paste cookie text first.", "bad");
+      b.disabled = true;
+      try {
+        await send("/api/cookies", {cookies: val});
+        toast("YouTube cookies saved server-wide! Works for all devices.", "ok");
+        return drawSettings();
+      } catch (err) {
+        toast(err.message || "Failed to save cookies.", "bad");
+      } finally {
+        b.disabled = false;
+      }
+      return;
+    }
+    if (a === "del_ck") {
+      b.disabled = true;
+      try {
+        await send("/api/cookies", {cookies: ""});
+        toast("YouTube cookies removed.", "sub");
+        return drawSettings();
+      } catch (err) {
+        toast(err.message || "Failed to remove cookies.", "bad");
       } finally {
         b.disabled = false;
       }

@@ -118,16 +118,43 @@ class _Quiet:
 
 
 def cookie_opts() -> dict:
-    """The YouTube cookies an admin saved (Settings, Connected apps), if any. yt-dlp only sends them to YouTube."""
-    if config.YT_COOKIES.is_file():
-        return {"cookiefile": str(config.YT_COOKIES)}
-    raw_cookies = (config.env("PEAKCUT_YT_COOKIES_TEXT") or "").strip()
-    if raw_cookies:
-        f = config.DATA_DIR / "youtube-cookies.txt"
-        if not f.is_file() or f.read_text(encoding="utf-8", errors="ignore") != raw_cookies:
+    """The YouTube cookies configured via environment variable, secret, or file."""
+    f = config.DATA_DIR / "youtube-cookies.txt"
+
+    # 1. Check all common environment variable names for cookie content:
+    raw = (
+        config.env("PEAKCUT_YT_COOKIES_TEXT")
+        or config.env("PEAKCUT_YT_COOKIES")
+        or config.env("YT_COOKIES_TEXT")
+        or config.env("YT_COOKIES")
+        or config.env("YOUTUBE_COOKIES")
+        or ""
+    ).strip()
+
+    if raw:
+        # Check if raw is a path to an existing file:
+        if not ("\n" in raw or "\t" in raw or " " in raw) and Path(raw).is_file():
+            return {"cookiefile": str(Path(raw))}
+
+        # If it's cookie content (Netscape or tab-separated):
+        if "\\n" in raw and "\n" not in raw:
+            raw = raw.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+        try:
             f.parent.mkdir(parents=True, exist_ok=True)
-            f.write_text(raw_cookies, encoding="utf-8")
+            if not f.is_file() or f.read_text(encoding="utf-8", errors="ignore") != raw:
+                f.write_text(raw, encoding="utf-8")
+            return {"cookiefile": str(f)}
+        except Exception:
+            pass
+
+    # 2. Check if a pre-existing non-empty cookie file exists in data directory or config.YT_COOKIES:
+    if f.is_file() and f.stat().st_size > 10:
         return {"cookiefile": str(f)}
+    try:
+        if config.YT_COOKIES.is_file() and config.YT_COOKIES.stat().st_size > 10:
+            return {"cookiefile": str(config.YT_COOKIES)}
+    except Exception:
+        pass
     return {}
 
 

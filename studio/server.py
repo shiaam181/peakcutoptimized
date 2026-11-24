@@ -1649,6 +1649,38 @@ def zernio_delete(request: Request):
     return accounts.zernio_clear()
 
 
+@app.get("/api/cookies")
+def get_cookies_status(request: Request):
+    _me(request)
+    opts = media.cookie_opts()
+    f = config.DATA_DIR / "youtube-cookies.txt"
+    has_f = f.is_file() and f.stat().st_size > 10
+    return {
+        "has_cookies": bool(opts),
+        "source": "file" if has_f else ("env" if opts else "none"),
+        "lines": f.read_text(encoding="utf-8", errors="ignore").count("\n") if has_f else 0,
+    }
+
+
+@app.post("/api/cookies")
+def post_cookies(request: Request, body: dict = Body(default={})):
+    _me(request)
+    text = str(body.get("cookies") or "").strip()
+    f = config.DATA_DIR / "youtube-cookies.txt"
+    if not text:
+        if f.is_file():
+            try:
+                f.unlink()
+            except Exception:
+                pass
+        return {"ok": True, "has_cookies": bool(media.cookie_opts())}
+    if "\\n" in text and "\n" not in text:
+        text = text.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(text, encoding="utf-8")
+    return {"ok": True, "has_cookies": True}
+
+
 # ---------------------------------------------------------------- connecting YouTube, Instagram and TikTok
 # Connect sends the browser to the platform's own sign-in page; the platform sends it back here, and the person lands
 # on Settings, Connected apps, with the account added (or a message saying what went wrong).
